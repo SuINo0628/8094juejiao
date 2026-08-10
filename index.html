@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>你是谁</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+  :root{
+    --bg:#FBF5EC;
+    --ink:#2C2620;
+    --ink-soft:#94877A;
+    --surface:#FFFFFF;
+    --line:#ECE1D2;
+    --accent:#C9A06A;
+    --shadow:0 12px 30px rgba(70,55,40,0.12);
+    --shadow-sm:0 4px 14px rgba(70,55,40,0.08);
+  }
+
+  html,body{
+    min-height:100%;
+    font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    color:var(--ink);
+    background:var(--bg);
+    user-select:none;
+    overflow-x:hidden;
+  }
+
+  .hand{font-family:'ZCOOL QingKe HuangYou','Noto Sans SC',sans-serif;}
+
+  .screen{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;
+    padding:calc(env(safe-area-inset-top) + 20px) 18px calc(env(safe-area-inset-bottom) + 26px);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    opacity:0;pointer-events:none;
+    transform:translateY(8px);
+    transition:opacity .4s ease,transform .4s ease;
+  }
+  .screen.show{opacity:1;pointer-events:auto;transform:none;}
+
+  /* ============ 选人页 ============ */
+  #selectScreen{background:var(--bg);}
+
+  .select-head{margin:4px 4px 24px;}
+  .select-kicker{font-size:13px;font-weight:500;color:var(--ink-soft);letter-spacing:.04em;margin-bottom:8px;}
+  .select-title{font-size:clamp(34px,11vw,46px);line-height:1;color:var(--ink);letter-spacing:.02em;}
+
+  .friend-wall{
+    display:grid;grid-template-columns:repeat(2,1fr);
+    gap:14px 12px;width:100%;max-width:520px;margin:0 auto;
+  }
+
+  /* 圆角矩形卡片，主题色用一个小圆来代表（替代侧边彩色条） */
+  .friend{
+    position:relative;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:20px 10px 18px;
+    box-shadow:var(--shadow-sm);
+    cursor:pointer;border:none;
+    transition:transform .18s ease,box-shadow .18s ease;
+  }
+  .friend:active{transform:scale(.96);}
+  @media(hover:hover){
+    .friend:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
+  }
+  .friend-avatar{
+    width:clamp(52px,16vw,62px);height:clamp(52px,16vw,62px);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:clamp(22px,6.5vw,28px);font-weight:900;
+    background:color-mix(in srgb,var(--accent) 24%,#fff);
+    color:color-mix(in srgb,var(--accent) 62%,#2C2620);
+    box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 14%,transparent);
+    transition:transform .2s ease;
+  }
+  .friend:active .friend-avatar{transform:scale(.92);}
+  .friend-name{font-size:15px;font-weight:700;color:var(--ink);}
+
+  /* ============ 互动页 ============ */
+  #mainScreen{background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 10%,var(--bg)) 0%, var(--bg) 50%);}
+
+  .back{
+    position:absolute;top:calc(env(safe-area-inset-top) + 14px);left:14px;
+    width:44px;height:44px;border-radius:50%;
+    background:var(--surface);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--ink);box-shadow:var(--shadow-sm);cursor:pointer;z-index:8;
+    transition:transform .15s ease;
+  }
+  .back:active{transform:scale(.88);}
+  .back svg{width:20px;height:20px;}
+
+  .stage{
+    width:100%;max-width:440px;margin:0 auto;
+    display:flex;flex-direction:column;align-items:center;gap:18px;
+    padding-top:8px;
+  }
+
+  .hi{
+    position:relative;align-self:flex-start;margin-left:8px;
+    font-family:'ZCOOL QingKe HuangYou','Noto Sans SC',sans-serif;
+    font-size:22px;color:color-mix(in srgb,var(--accent) 50%,#2C2620);
+    background:var(--surface);border:1px solid var(--line);
+    padding:4px 16px 6px;border-radius:14px;
+    box-shadow:var(--shadow-sm);transform:rotate(-2deg);
+  }
+  .hi::after{
+    content:"";position:absolute;left:22px;bottom:-7px;
+    width:12px;height:12px;background:var(--surface);
+    border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+    transform:rotate(45deg);
+  }
+
+  .avatar-zone{position:relative;width:min(58vw,230px);height:min(58vw,230px);flex-shrink:0;
+    animation:pop .55s cubic-bezier(.34,1.56,.64,1);}
+  .avatar{width:100%;height:100%;animation:floaty 5s ease-in-out infinite;
+    display:flex;align-items:center;justify-content:center;}
+  .avatar img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
+  @keyframes floaty{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-11px) scale(1.025);}}
+  @keyframes pop{0%{transform:scale(.55);opacity:0;}100%{transform:scale(1);opacity:1;}}
+
+  .carousel{width:100%;height:100%;overflow:hidden;position:relative;border-radius:18px;}
+  .carousel-track{display:flex;height:100%;transition:transform .5s cubic-bezier(.25,.46,.45,.94);}
+  .carousel-slide{min-width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+  .carousel-slide img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
+  .carousel-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:3;pointer-events:none;}
+  .carousel-dot{width:7px;height:7px;border-radius:50%;border:none;padding:0;background:rgba(44,38,32,.22);transition:all .3s ease;}
+  .carousel-dot.active{width:18px;border-radius:4px;background:var(--accent);}
+
+  .card{
+    width:100%;background:var(--surface);
+    border:1px solid var(--line);border-radius:22px;
+    padding:clamp(22px,6vw,30px) clamp(20px,5vw,26px);
+    text-align:center;box-shadow:var(--shadow);
+    animation:rise .45s ease;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  .card.shake{animation:shake .42s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+
+  .question{font-size:clamp(19px,5.2vw,22px);font-weight:700;line-height:1.55;color:var(--ink);margin-bottom:8px;}
+  .counter{font-size:15px;color:var(--ink-soft);margin-bottom:18px;font-weight:500;}
+
+  /* 圆形倒计时 */
+  .ring-wrap{position:relative;width:132px;height:132px;margin:6px auto 18px;}
+  .ring{transform:rotate(-90deg);width:100%;height:100%;}
+  .ring-bg{fill:none;stroke:var(--line);stroke-width:9;}
+  .ring-fg{fill:none;stroke:var(--accent);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset 1s linear;}
+  .ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:40px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums;}
+
+  .btns{display:flex;gap:12px;margin-top:4px;}
+  .btn{
+    flex:1;min-height:54px;border:none;border-radius:16px;
+    font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;line-height:1.3;
+    transition:transform .15s ease,box-shadow .15s ease;
+  }
+  .btn:active{transform:scale(.94);}
+  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 30%,transparent);}
+  .btn.ghost{background:color-mix(in srgb,var(--ink) 6%,#fff);color:var(--ink);}
+
+  /* ============ 结算页 ============ */
+  .result{display:none;position:relative;width:100%;overflow:hidden;
+    background:
+      radial-gradient(120% 80% at 50% 0%, color-mix(in srgb,var(--accent) 16%,#fff), transparent 60%),
+      var(--surface);
+    border:1px solid var(--line);border-radius:24px;
+    padding:48px 26px 36px;text-align:center;box-shadow:var(--shadow);}
+  .result.show{display:block;animation:bounceIn .6s cubic-bezier(.34,1.56,.64,1) both;}
+  @keyframes bounceIn{0%{opacity:0;transform:scale(.8) translateY(10px);}100%{opacity:1;transform:none;}}
+  .result-core{position:relative;z-index:2;}
+  .result-text{font-size:clamp(27px,7vw,33px);font-weight:900;color:var(--ink);margin-bottom:10px;
+    animation:txtPop .6s .05s cubic-bezier(.34,1.56,.64,1) both;}
+  .result-sub{font-size:15px;color:var(--ink-soft);margin-bottom:26px;line-height:1.5;
+    animation:txtPop .6s .16s cubic-bezier(.34,1.56,.64,1) both;}
+  .result .btn.primary{position:relative;z-index:2;animation:txtPop .6s .28s cubic-bezier(.34,1.56,.64,1) both;}
+  @keyframes txtPop{from{opacity:0;transform:translateY(10px) scale(.9);}to{opacity:1;transform:none;}}
+
+  /* 飘落丝带（CSS 层） */
+  .confetti{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:30;}
+  .ribbon{position:absolute;top:-60px;opacity:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.08));
+    border-radius:6px;animation:ribbonFall linear forwards;}
+  @keyframes ribbonFall{
+    0%{transform:translateY(-20px) rotate(0deg);opacity:0;}
+    12%{opacity:1;}
+    100%{transform:translateY(620px) rotate(640deg);opacity:0;}
+  }
+
+  /* 弹窗 */
+  .modal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(40,32,24,.5);}
+  .modal.show{display:flex;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+  .modal-card{width:100%;max-width:320px;background:var(--surface);border:1px solid var(--line);
+    border-radius:22px;padding:32px 24px;text-align:center;box-shadow:var(--shadow);
+    animation:pop .4s cubic-bezier(.34,1.56,.64,1);}
+  .modal-text{font-size:21px;font-weight:700;color:var(--ink);margin-bottom:24px;line-height:1.5;}
+
+  @media(min-width:540px){
+    .friend-wall{grid-template-columns:repeat(3,1fr);gap:16px 14px;}
+  }
+  @media(min-height:760px){.stage{gap:22px;}}
+</style>
+</head>
+<body>
+
+<section id="selectScreen" class="screen show">
+  <div class="select-head">
+    <div class="select-kicker">点下面的卡片，挑一个朋友</div>
+    <div class="select-title hand">你是谁？</div>
+  </div>
+  <div class="friend-wall" id="wall"></div>
+</section>
+
+<section id="mainScreen" class="screen">
+  <button class="back" id="backBtn" aria-label="返回">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+
+  <div class="stage">
+    <div class="hi" id="hiTag">Hi,</div>
+    <div class="avatar-zone"><div class="avatar" id="avatar"></div></div>
+
+    <div class="card" id="card"><div id="cardInner"></div></div>
+
+    <div class="result" id="result">
+      <div class="result-core">
+        <div class="result-text" id="resultText">我们和好了！</div>
+        <div class="result-sub" id="resultSub">又可以一起玩了</div>
+        <button class="btn primary" id="resultBack" style="width:100%;">返回选朋友</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-text" id="modalText">要和你绝交</div>
+    <button class="btn primary" id="modalClose" style="width:100%;">关闭</button>
+  </div>
+</div>
+
+<div class="confetti" id="confetti"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+<script>
+  const COLORS={
+    jichibaofan:'#E79A6B', mangzhong:'#9DBE5E', lurenju:'#F0A24E',
+    isfp:'#B49BDC', danhuangshuimu:'#8FC4E8', enfp:'#EE99BB',
+    candoudou:'#F2A0C4', mao:'#A7B7C2', j9194:'#6FCFC0',
+    tiyuanbu:'#C7B36B', andelei:'#C39B6C', istp:'#8FA8E8',
+    nainiumao:'#B3ADA4', pocky:'#4ECDC4', shiyue:'#8A837D'
+  };
+  const PALETTE=['#E0907A','#7FC8A9','#F4B860','#8FC4E8','#EE99BB','#9DBE5E'];
+
+  const breakup=d=>Object.assign({kind:'breakup',text:'崔胜澈8094要和你绝交',start:20,yes:'同意',no:'拒绝',yesDelta:10,noDelta:10},d);
+
+  const characters={
+    jichibaofan:{name:'鸡翅包饭',images:['jichibaofan.png'],
+      dialog:{kind:'choice',text:'Hi,偷穿我衣服的带眼镜的紫色狐狸，我想要你的眼镜。',
+        options:[{label:'给我',result:'好，拿去吧～'},{label:'给净汉',result:'那就给净汉咯'}]}},
+    mangzhong:{name:'芒种',images:['mangzhong.png'],dialog:breakup()},
+    lurenju:{name:'路人橘',images:['lurenju.png'],
+      dialog:{kind:'choice',text:'你想在橘子树下乘凉？',
+        options:[{label:'想',result:'那我们去找棵橘子树吧～'},{label:'非常想',result:'太好了，马上出发！'}]}},
+    isfp:{name:'ISFP',images:['ISFP12937.png'],dialog:breakup()},
+    danhuangshuimu:{name:'蛋黄水母',images:['danhuangshuimu.png'],
+      dialog:{kind:'timedlove',text:'你要和我一直好吗？',start:20,
+        options:[{label:'要',result:'好，一直好！'},{label:'那肯定',result:'那必须一直好！'}]}},
+    enfp:{name:'ENFP',images:['1ENFP13155.png','2ENFP13155.png','3ENFP13155.png'],dialog:breakup()},
+    candoudou:{name:'蚕豆豆',images:['candoudou.jpg'],dialog:breakup()},
+    mao:{name:'猫',images:['mao.png'],dialog:breakup()},
+    j9194:{name:'9194',images:['9194.png'],dialog:breakup()},
+    tiyuanbu:{name:'踢圆步',images:['tiyuanbu.png'],
+      dialog:{kind:'kick',text:'你想踢二十秒正步吗？',yes:'想',no:'不想',yesDelta:10}},
+    andelei:{name:'安德烈',images:['andelei.png'],
+      dialog:{kind:'choice',text:'你想werwerwer吗？',
+        options:[{label:'wer',result:'好耶'},{label:'werwer',result:'好耶耶'}]}},
+    istp:{name:'ISTP',images:['ISTP.jpg'],dialog:breakup()},
+    nainiumao:{name:'奶牛猫',images:['nainiumao.jpg'],dialog:breakup()},
+    pocky:{name:'Pocky',images:['Pocky.png'],dialog:breakup()},
+    shiyue:{name:'十月',images:['shiyue.png'],dialog:breakup()}
+  };
+
+  const selectScreen=document.getElementById('selectScreen');
+  const mainScreen=document.getElementById('mainScreen');
+  const wall=document.getElementById('wall');
+  const avatar=document.getElementById('avatar');
+  const avatarZone=document.querySelector('.avatar-zone');
+  const hiTag=document.getElementById('hiTag');
+  const card=document.getElementById('card');
+  const cardInner=document.getElementById('cardInner');
+  const result=document.getElementById('result');
+  const resultText=document.getElementById('resultText');
+  const resultSub=document.getElementById('resultSub');
+  const resultBack=document.getElementById('resultBack');
+  const backBtn=document.getElementById('backBtn');
+  const confettiBox=document.getElementById('confetti');
+  const modal=document.getElementById('modal');
+  const modalText=document.getElementById('modalText');
+  const modalClose=document.getElementById('modalClose');
+
+  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0;
+
+  function buildWall(){
+    wall.innerHTML=Object.entries(characters).map(([id,c])=>`
+      <button class="friend" data-id="${id}" aria-label="${c.name}" style="--accent:${COLORS[id]}">
+        <span class="friend-avatar">${c.name.charAt(0)}</span>
+        <span class="friend-name">${c.name}</span>
+      </button>`).join('');
+    wall.querySelectorAll('.friend').forEach(el=>{
+      el.addEventListener('click',()=>enter(el.dataset.id));
+    });
+  }
+
+  function applyTheme(id){mainScreen.style.setProperty('--accent',COLORS[id]);}
+
+  function enter(id){
+    const c=characters[id]; if(!c)return;
+    current=c; applyTheme(id);
+    hiTag.textContent='Hi, '+c.name;
+    avatarZone.style.animation='none'; void avatarZone.offsetWidth; avatarZone.style.animation='';
+    if(c.images.length===1){
+      avatar.innerHTML=`<img src="${c.images[0]}" alt="${c.name}">`;
+    }else{
+      avatar.innerHTML=buildCarousel(c.images,c.name);
+      setupCarousel();
+    }
+    reset();
+    selectScreen.classList.remove('show');
+    setTimeout(()=>mainScreen.classList.add('show'),40);
+  }
+
+  function buildCarousel(images,name){
+    const slides=images.map(i=>`<div class="carousel-slide"><img src="${i}" alt="${name}"></div>`).join('');
+    const dots=images.map((_,i)=>`<span class="carousel-dot ${i===0?'active':''}"></span>`).join('');
+    return `<div class="carousel"><div class="carousel-track">${slides}</div></div><div class="carousel-dots">${dots}</div>`;
+  }
+  function setupCarousel(){
+    const car=avatar.querySelector('.carousel'); if(!car)return;
+    const track=car.querySelector('.carousel-track');
+    const dots=avatar.querySelectorAll('.carousel-dot');
+    count=dots.length; idx=0;
+    const go=i=>{idx=(i+count)%count;track.style.transform=`translateX(-${idx*100}%)`;dots.forEach((d,i)=>d.classList.toggle('active',i===idx));};
+    go(0);
+    clearInterval(carouselTimer);
+    carouselTimer=setInterval(()=>go(idx+1),3000);
+  }
+
+  function reset(){
+    clearInterval(timer); clearInterval(carouselTimer); timer=carouselTimer=null;
+    modalOpen=false; modal.classList.remove('show');
+    card.style.display='block'; card.classList.remove('shake');
+    result.classList.remove('show');
+    render(current.dialog);
+  }
+
+  function ringHTML(total){
+    const C=(2*Math.PI*54).toFixed(2);
+    return `<div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120">
+      <circle class="ring-bg" cx="60" cy="60" r="54"/>
+      <circle class="ring-fg" cx="60" cy="60" r="54" style="stroke-dasharray:${C};stroke-dashoffset:0"/>
+    </svg><div class="ring-num" id="ringNum">${total}</div></div>`;
+  }
+  function setRing(rem,tot){
+    const C=2*Math.PI*54;
+    const fg=document.querySelector('.ring-fg'),num=document.getElementById('ringNum');
+    if(fg)fg.style.strokeDashoffset=C*(1-Math.max(0,rem)/tot);
+    if(num)num.textContent=Math.max(0,rem);
+  }
+
+  function render(d){
+    if(d.kind==='breakup'){
+      time=d.start; total=d.start;
+      cardInner.innerHTML=`
+        <div class="question">${d.text}</div>
+        ${ringHTML(time)}
+        <div class="btns">
+          <button class="btn primary" id="yesBtn">${d.yes}</button>
+          <button class="btn ghost" id="noBtn">${d.no}</button>
+        </div>`;
+      document.getElementById('yesBtn').onclick=()=>{
+        time+=d.yesDelta||10; if(time>total)total=time; setRing(time,total); bump();
+      };
+      document.getElementById('noBtn').onclick=()=>{
+        time-=d.noDelta||10; setRing(time,total); bump(); if(time<=0)reconcile();
+      };
+      startTimer();
+    }else if(d.kind==='kick'){
+      kickCount=0;
+      cardInner.innerHTML=`
+        <div class="question">${d.text}</div>
+        <div class="counter" id="kc">已踢 0 秒</div>
+        <div class="btns">
+          <button class="btn primary" id="yesBtn">${d.yes}</button>
+          <button class="btn ghost" id="noBtn">${d.no}</button>
+        </div>`;
+      document.getElementById('yesBtn').onclick=()=>{kickCount+=d.yesDelta||10;document.getElementById('kc').textContent='已踢 '+kickCount+' 秒';bump();};
+      document.getElementById('noBtn').onclick=()=>openModal('要和你绝交','关闭',null);
+    }else if(d.kind==='timedlove'){
+      time=d.start; total=d.start;
+      cardInner.innerHTML=`<div class="question">${d.text}</div>${ringHTML(time)}<div class="btns" id="opt"></div>`;
+      fillOpts(d.options,()=>showResult('好，一直好！','永远做朋友'));
+      startTimer(()=>openForceModal('你必须和我好！'));
+    }else{
+      cardInner.innerHTML=`<div class="question">${d.text}</div><div class="btns" id="opt"></div>`;
+      fillOpts(d.options,r=>showResult(r,'贴贴 / 抱抱 / 击掌'));
+    }
+  }
+
+  function fillOpts(opts,onPick){
+    const box=document.getElementById('opt');
+    opts.forEach(o=>{
+      const b=document.createElement('button');
+      b.className='btn primary'; b.textContent=o.label;
+      b.onclick=()=>onPick(o.result);
+      box.appendChild(b);
+    });
+  }
+
+  function bump(){card.classList.remove('shake');void card.offsetWidth;card.classList.add('shake');}
+  function startTimer(onTimeout){
+    clearInterval(timer);
+    timer=setInterval(()=>{
+      if(modalOpen)return;
+      time--; setRing(time,total);
+      if(time<=0){clearInterval(timer);timer=null;onTimeout?onTimeout():reconcile();}
+    },1000);
+  }
+  function reconcile(){showResult('我们和好了！','又可以一起玩了');}
+
+  function showResult(text,sub){
+    clearInterval(timer); timer=null;
+    card.style.display='none';
+    resultText.textContent=text;
+    resultSub.textContent=sub||'贴贴 / 抱抱 / 击掌';
+    result.classList.add('show');
+    celebrate();
+    spawnRibbons();
+  }
+
+  /* canvas-confetti 丝带彩带（小红书/抖音风，最火的庆祝库） */
+  function celebrate(){
+    if(typeof confetti!=='function')return;
+    const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
+    const colors=[accent].concat(PALETTE);
+    confetti({particleCount:130,spread:85,startVelocity:46,origin:{y:0.7},colors,scalar:1.15,shapes:['ribbon','square','circle'],ticks:200});
+    setTimeout(()=>confetti({particleCount:90,angle:60,spread:55,origin:{x:0},colors,shapes:['ribbon','square']}),180);
+    setTimeout(()=>confetti({particleCount:90,angle:120,spread:55,origin:{x:1},colors,shapes:['ribbon','square']}),180);
+    let n=0;
+    const iv=setInterval(()=>{
+      confetti({particleCount:34,spread:100,startVelocity:26,origin:{y:0},colors,scalar:0.9,shapes:['ribbon']});
+      if(++n>4)clearInterval(iv);
+    },320);
+  }
+
+  /* 飘落丝带（CSS 层，保证丝带质感） */
+  function spawnRibbons(){
+    confettiBox.innerHTML='';
+    const pairs=[['#EE99BB','#F2A0C4'],['#8FC4E8','#9FD0EC'],['#F4B860','#F6C97A'],['#7FC8A9','#9AD9BD'],['#E0907A','#EFA68F'],['#9DBE5E','#B7D27E']];
+    for(let i=0;i<18;i++){
+      const r=document.createElement('span');
+      r.className='ribbon';
+      const p=pairs[i%pairs.length];
+      r.style.background=`linear-gradient(180deg,${p[0]},${p[1]})`;
+      const left=Math.random()*100;
+      const dur=2.8+Math.random()*1.8;
+      const w=7+Math.random()*7, h=26+Math.random()*18;
+      r.style.left=left+'%';
+      r.style.width=w+'px';
+      r.style.height=h+'px';
+      r.style.animationDuration=dur+'s';
+      r.style.animationDelay=(Math.random()*0.9)+'s';
+      confettiBox.appendChild(r);
+    }
+  }
+
+  function openModal(text,btnLabel,onConfirm){
+    modalOpen=true; clearInterval(timer); timer=null;
+    modalText.textContent=text;
+    modalClose.textContent=btnLabel||'关闭';
+    modalClose.onclick=()=>{
+      modal.classList.remove('show'); modalOpen=false;
+      if(onConfirm)onConfirm();
+    };
+    modal.classList.add('show');
+  }
+  function openForceModal(text){openModal(text,'好',()=>showResult('好，一直好！','永远做朋友'));}
+  modal.addEventListener('click',e=>{if(e.target===modal)modalClose.click();});
+
+  function back(){
+    clearInterval(timer); clearInterval(carouselTimer); timer=carouselTimer=null;
+    confettiBox.innerHTML='';
+    mainScreen.classList.remove('show');
+    setTimeout(()=>{selectScreen.classList.add('show');avatar.innerHTML='';cardInner.innerHTML='';},200);
+  }
+  backBtn.onclick=back; resultBack.onclick=back;
+
+  buildWall();
+  document.addEventListener('gesturestart',e=>e.preventDefault());
+</script>
+</body>
+</html>
