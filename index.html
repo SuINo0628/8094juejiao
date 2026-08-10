@@ -131,6 +131,7 @@
   .carousel-dot.active{width:18px;border-radius:4px;background:var(--accent);}
 
   .card{
+    position:relative;z-index:2;
     width:100%;background:var(--surface);
     border:1px solid var(--line);border-radius:22px;
     padding:clamp(22px,6vw,30px) clamp(20px,5vw,26px);
@@ -223,13 +224,14 @@
     18%{opacity:1;transform:translate(-50%,-70%) scale(1.12);}
     100%{opacity:0;transform:translate(-50%,-180%) scale(1);}
   }
-  /* 蛋黄水母：点击飘出的小爱心 */
-  .float-heart{position:absolute;left:50%;top:46%;width:26px;height:26px;color:var(--accent);
-    pointer-events:none;animation:heartRise 1.3s ease-out forwards;}
-  @keyframes heartRise{
-    0%{opacity:0;transform:translate(-50%,0) scale(.35) rotate(-8deg);}
-    22%{opacity:1;transform:translate(-50%,-46%) scale(1.12) rotate(6deg);}
-    100%{opacity:0;transform:translate(-50%,-175%) scale(.9) rotate(-4deg);}
+  /* 蛋黄水母：点击飘出的背景漂浮爱心（粉色，铺满全屏，慢速上升） */
+  .bg-hearts{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none;}
+  .bg-heart{position:absolute;bottom:-44px;color:#EE99BB;opacity:.85;
+    pointer-events:none;animation:bgHeartRise var(--dur,5.5s) ease-in forwards;}
+  @keyframes bgHeartRise{
+    0%{transform:translateY(0) translateX(0) scale(.6) rotate(-10deg);opacity:0;}
+    10%{opacity:.85;}
+    100%{transform:translateY(-112vh) translateX(var(--drift,24px)) scale(1.15) rotate(8deg);opacity:0;}
   }
 
   /* 弹窗 */
@@ -258,6 +260,7 @@
 </section>
 
 <section id="mainScreen" class="screen">
+  <div class="bg-hearts" id="bgHearts"></div>
   <button class="back" id="backBtn" aria-label="返回">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
   </button>
@@ -348,6 +351,7 @@
   const backBtn=document.getElementById('backBtn');
   const confettiBox=document.getElementById('confetti');
   const floatLayer=document.getElementById('floatLayer');
+  const bgHearts=document.getElementById('bgHearts');
   const stage=document.querySelector('.stage');
   const modal=document.getElementById('modal');
   const modalText=document.getElementById('modalText');
@@ -489,7 +493,7 @@
       setHeart(love);
       fillOpts(d.options,o=>{
         love=Math.min(1,love+(o.bump||0.34));
-        setHeart(love); heartBump(); floatText('喜欢+1'); floatHearts(5);
+        setHeart(love); heartBump(); floatText('喜欢+1'); floatHearts(14);
         if(love>=1){
           clearInterval(timer); timer=null;
           setTimeout(()=>showResult(o.result||'好，一直好！','我喜欢你'),650);
@@ -557,19 +561,20 @@
     floatLayer.appendChild(p);
     setTimeout(()=>p.remove(),1100);
   }
-  /* 蛋黄水母：点击时飘出若干小爱心（主题色 SVG，避用 emoji） */
+  /* 蛋黄水母：点击时飘出若干粉色背景爱心（铺满全屏、慢速上升、避用 emoji） */
   function floatHearts(n){
-    n=n||5;
+    n=n||12;
     for(let i=0;i<n;i++){
       const h=document.createElement('div');
-      h.className='float-heart';
+      h.className='bg-heart';
       h.innerHTML='<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M12 21s-8-5.5-8-11a4.5 4.5 0 0 1 8-3 4.5 4.5 0 0 1 8 3c0 5.5-8 11-8 11z"/></svg>';
-      h.style.left=(50+(Math.random()*44-22))+'%';
-      h.style.top=(44+Math.random()*10)+'%';
-      const s=18+Math.random()*20; h.style.width=s+'px'; h.style.height=s+'px';
-      h.style.animationDelay=(Math.random()*0.28)+'s';
-      floatLayer.appendChild(h);
-      setTimeout(()=>h.remove(),1600);
+      h.style.left=(Math.random()*100)+'%';
+      const s=16+Math.random()*24; h.style.width=s+'px'; h.style.height=s+'px';
+      h.style.setProperty('--dur',(4.8+Math.random()*3.4)+'s');
+      h.style.setProperty('--drift',(Math.random()*90-45)+'px');
+      h.style.animationDelay=(Math.random()*0.35)+'s';
+      bgHearts.appendChild(h);
+      setTimeout(()=>h.remove(),9000);
     }
   }
   function maybeBonus(){
