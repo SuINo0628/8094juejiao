@@ -118,6 +118,15 @@
   .avatar{position:relative;width:100%;height:100%;animation:floaty 5s ease-in-out infinite;}
   .img-single{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
   .img-single img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
+  .img-hit{animation:imgHit .45s ease;}
+  @keyframes imgHit{
+    0%{transform:translate(0,0) rotate(0);}
+    15%{transform:translate(-9px,3px) rotate(-5deg);filter:drop-shadow(0 0 10px rgba(220,70,70,.85)) brightness(1.25);}
+    32%{transform:translate(8px,-3px) rotate(4deg);}
+    50%{transform:translate(-6px,2px) rotate(-3deg);}
+    68%{transform:translate(5px,0) rotate(2deg);}
+    100%{transform:translate(0,0) rotate(0);filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
+  }
   @keyframes floaty{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-11px) scale(1.025);}}
   @keyframes pop{0%{transform:scale(.55);opacity:0;}100%{transform:scale(1);opacity:1;}}
 
@@ -323,7 +332,7 @@
       dialog:{kind:'pull',text:'你拉豆豆吗？',
         options:[{label:'拉',amount:1,role:'primary'},{label:'不拉',amount:2,role:'ghost'}]}},
     mao:{name:'猫',images:['mao.png'],dialog:breakup()},
-    j9194:{name:'9194',images:['9194.png'],dialog:breakup()},
+    j9194:{name:'9194',images:['9194.png'],hitOnClick:true,dialog:breakup()},
     tiyuanbu:{name:'踢圆步',images:['tiyuanbu.png'],
       dialog:{kind:'kick',text:'你想踢二十秒正步吗？',yes:'想',no:'不想',yesDelta:10}},
     andelei:{name:'安德烈',images:['andelei.png'],
@@ -383,6 +392,7 @@
       avatar.innerHTML=buildCarousel(c.images,c.name);
       setupCarousel();
     }
+    if(c.hitOnClick) setupImageHit();
     selectScreen.classList.remove('show');
     setTimeout(()=>mainScreen.classList.add('show'),40);
   }
@@ -401,6 +411,18 @@
     go(0);
     clearInterval(carouselTimer);
     carouselTimer=setInterval(()=>go(idx+1),3000);
+  }
+  /* 9194：点一下头像像被攻击一样抖一下 + 飘"被攻击！" */
+  function setupImageHit(){
+    const imgs=avatar.querySelectorAll('img');
+    imgs.forEach(img=>{
+      img.style.cursor='pointer';
+      img.addEventListener('click',()=>{
+        img.classList.remove('img-hit'); void img.offsetWidth; img.classList.add('img-hit');
+        floatText('被攻击！');
+        setTimeout(()=>img.classList.remove('img-hit'),460);
+      });
+    });
   }
 
   function reset(){
