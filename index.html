@@ -332,7 +332,7 @@
       dialog:{kind:'pull',text:'你拉豆豆吗？',
         options:[{label:'拉',amount:1,role:'primary'},{label:'不拉',amount:2,role:'ghost'}]}},
     mao:{name:'猫',images:['mao.png'],dialog:breakup()},
-    j9194:{name:'9194',images:['9194.png'],hitOnClick:true,dialog:breakup()},
+    j9194:{name:'9194',images:['9194.png'],dialog:breakup()},
     tiyuanbu:{name:'踢圆步',images:['tiyuanbu.png'],
       dialog:{kind:'kick',text:'你想踢二十秒正步吗？',yes:'想',no:'不想',yesDelta:10}},
     andelei:{name:'安德烈',images:['andelei.png'],
@@ -392,7 +392,7 @@
       avatar.innerHTML=buildCarousel(c.images,c.name);
       setupCarousel();
     }
-    if(c.hitOnClick) setupImageHit();
+    if(id!=='danhuangshuimu') setupImageHit();
     selectScreen.classList.remove('show');
     setTimeout(()=>mainScreen.classList.add('show'),40);
   }
@@ -412,14 +412,19 @@
     clearInterval(carouselTimer);
     carouselTimer=setInterval(()=>go(idx+1),3000);
   }
-  /* 9194：点一下头像像被攻击一样抖一下 + 飘"被攻击！" */
+  /* 点一下头像像被攻击一样抖一下 + 飘字；有倒计时时时间+120 */
   function setupImageHit(){
     const imgs=avatar.querySelectorAll('img');
     imgs.forEach(img=>{
       img.style.cursor='pointer';
       img.addEventListener('click',()=>{
         img.classList.remove('img-hit'); void img.offsetWidth; img.classList.add('img-hit');
-        floatText('被攻击！');
+        floatText('被攻击！+120秒');
+        if(document.getElementById('ringNum')){
+          const before=time;
+          time+=120; if(time>total)total=time; setRing(time,total); bump();
+          if(time>=120 && before<120){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
+        }
         setTimeout(()=>img.classList.remove('img-hit'),460);
       });
     });
