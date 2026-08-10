@@ -57,34 +57,29 @@
     gap:14px 12px;width:100%;max-width:520px;margin:0 auto;
   }
 
-  /* 圆角矩形卡片，主题色用一个小圆来代表（替代侧边彩色条） */
+  /* 圆角矩形卡片：名字直接写在矩形里，主题色用淡色底 + 小圆点代表（不用大圆形头像） */
   .friend{
     position:relative;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;
-    background:var(--surface);
-    border:1px solid var(--line);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+    background:color-mix(in srgb,var(--accent) 9%,#fff);
+    border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));
     border-radius:18px;
-    padding:20px 10px 18px;
+    padding:26px 10px 24px;
     box-shadow:var(--shadow-sm);
     cursor:pointer;border:none;
-    transition:transform .18s ease,box-shadow .18s ease;
+    transition:transform .18s ease,box-shadow .18s ease,border-color .2s ease,background .2s ease;
   }
   .friend:active{transform:scale(.96);}
   @media(hover:hover){
-    .friend:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
+    .friend:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));}
   }
   .friend-avatar{
-    width:clamp(52px,16vw,62px);height:clamp(52px,16vw,62px);
-    border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    font-size:clamp(22px,6.5vw,28px);font-weight:900;
-    background:color-mix(in srgb,var(--accent) 24%,#fff);
-    color:color-mix(in srgb,var(--accent) 62%,#2C2620);
-    box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 14%,transparent);
-    transition:transform .2s ease;
+    width:11px;height:11px;border-radius:50%;
+    background:color-mix(in srgb,var(--accent) 72%,#2C2620);
+    margin-bottom:12px;transition:transform .2s ease;
   }
-  .friend:active .friend-avatar{transform:scale(.92);}
-  .friend-name{font-size:15px;font-weight:700;color:var(--ink);}
+  .friend:active .friend-avatar{transform:scale(.85);}
+  .friend-name{font-size:16px;font-weight:800;color:var(--ink);text-align:center;line-height:1.35;}
 
   /* ============ 互动页 ============ */
   #mainScreen{background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 10%,var(--bg)) 0%, var(--bg) 50%);}
@@ -101,6 +96,7 @@
   .back svg{width:20px;height:20px;}
 
   .stage{
+    position:relative;
     width:100%;max-width:440px;margin:0 auto;
     display:flex;flex-direction:column;align-items:center;gap:18px;
     padding-top:8px;
@@ -129,7 +125,8 @@
   @keyframes floaty{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-11px) scale(1.025);}}
   @keyframes pop{0%{transform:scale(.55);opacity:0;}100%{transform:scale(1);opacity:1;}}
 
-  .carousel{width:100%;height:100%;overflow:hidden;position:relative;border-radius:18px;}
+  .carousel-box{position:absolute;inset:0;}
+  .carousel{position:absolute;inset:0;overflow:hidden;border-radius:18px;}
   .carousel-track{display:flex;height:100%;transition:transform .5s cubic-bezier(.25,.46,.45,.94);}
   .carousel-slide{min-width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
   .carousel-slide img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
@@ -197,6 +194,18 @@
     100%{transform:translateY(620px) rotate(640deg);opacity:0;}
   }
 
+  /* 浮动文字（踢正步 +10 / +20 等） */
+  .float-layer{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:6;}
+  .float-pop{position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);
+    font-size:clamp(26px,8vw,40px);font-weight:900;color:var(--accent);
+    text-shadow:0 2px 10px rgba(255,255,255,.8);white-space:nowrap;
+    animation:floatUp 1.05s cubic-bezier(.22,1,.36,1) forwards;}
+  @keyframes floatUp{
+    0%{opacity:0;transform:translate(-50%,-30%) scale(.5);}
+    18%{opacity:1;transform:translate(-50%,-70%) scale(1.12);}
+    100%{opacity:0;transform:translate(-50%,-180%) scale(1);}
+  }
+
   /* 弹窗 */
   .modal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(40,32,24,.5);}
   .modal.show{display:flex;animation:fade .25s ease;}
@@ -228,7 +237,7 @@
   </button>
 
   <div class="stage">
-    <div class="hi" id="hiTag">Hi,</div>
+    <div class="hi" id="hiTag">这是</div>
     <div class="avatar-zone"><div class="avatar" id="avatar"></div></div>
 
     <div class="card" id="card"><div id="cardInner"></div></div>
@@ -240,6 +249,7 @@
         <button class="btn primary" id="resultBack" style="width:100%;">返回选朋友</button>
       </div>
     </div>
+    <div class="float-layer" id="floatLayer"></div>
   </div>
 </section>
 
@@ -306,6 +316,7 @@
   const resultBack=document.getElementById('resultBack');
   const backBtn=document.getElementById('backBtn');
   const confettiBox=document.getElementById('confetti');
+  const floatLayer=document.getElementById('floatLayer');
   const modal=document.getElementById('modal');
   const modalText=document.getElementById('modalText');
   const modalClose=document.getElementById('modalClose');
@@ -315,7 +326,7 @@
   function buildWall(){
     wall.innerHTML=Object.entries(characters).map(([id,c])=>`
       <button class="friend" data-id="${id}" aria-label="${c.name}" style="--accent:${COLORS[id]}">
-        <span class="friend-avatar">${c.name.charAt(0)}</span>
+        <span class="friend-avatar"></span>
         <span class="friend-name">${c.name}</span>
       </button>`).join('');
     wall.querySelectorAll('.friend').forEach(el=>{
@@ -328,7 +339,7 @@
   function enter(id){
     const c=characters[id]; if(!c)return;
     current=c; applyTheme(id);
-    hiTag.textContent='Hi, '+c.name;
+    hiTag.textContent='这是'+c.name;
     avatarZone.style.animation='none'; void avatarZone.offsetWidth; avatarZone.style.animation='';
     if(c.images.length===1){
       avatar.innerHTML=`<img src="${c.images[0]}" alt="${c.name}">`;
@@ -344,7 +355,7 @@
   function buildCarousel(images,name){
     const slides=images.map(i=>`<div class="carousel-slide"><img src="${i}" alt="${name}"></div>`).join('');
     const dots=images.map((_,i)=>`<span class="carousel-dot ${i===0?'active':''}"></span>`).join('');
-    return `<div class="carousel"><div class="carousel-track">${slides}</div></div><div class="carousel-dots">${dots}</div>`;
+    return `<div class="carousel-box"><div class="carousel"><div class="carousel-track">${slides}</div></div><div class="carousel-dots">${dots}</div></div>`;
   }
   function setupCarousel(){
     const car=avatar.querySelector('.carousel'); if(!car)return;
@@ -360,6 +371,7 @@
   function reset(){
     clearInterval(timer); clearInterval(carouselTimer); timer=carouselTimer=null;
     modalOpen=false; modal.classList.remove('show');
+    floatLayer.innerHTML='';
     card.style.display='block'; card.classList.remove('shake');
     result.classList.remove('show');
     render(current.dialog);
@@ -405,12 +417,12 @@
           <button class="btn primary" id="yesBtn">${d.yes}</button>
           <button class="btn ghost" id="noBtn">${d.no}</button>
         </div>`;
-      document.getElementById('yesBtn').onclick=()=>{kickCount+=d.yesDelta||10;document.getElementById('kc').textContent='已踢 '+kickCount+' 秒';bump();};
+      document.getElementById('yesBtn').onclick=()=>{kickCount+=d.yesDelta||10;document.getElementById('kc').textContent='已踢 '+kickCount+' 秒';bump();floatText('+10秒');maybeBonus();};
       document.getElementById('noBtn').onclick=()=>openModal('要和你绝交','关闭',null);
     }else if(d.kind==='timedlove'){
       time=d.start; total=d.start;
       cardInner.innerHTML=`<div class="question">${d.text}</div>${ringHTML(time)}<div class="btns" id="opt"></div>`;
-      fillOpts(d.options,()=>showResult('好，一直好！','永远做朋友'));
+      fillOpts(d.options,()=>showResult('好，一直好！','我喜欢你'));
       startTimer(()=>openForceModal('你必须和我好！'));
     }else{
       cardInner.innerHTML=`<div class="question">${d.text}</div><div class="btns" id="opt"></div>`;
@@ -429,6 +441,21 @@
   }
 
   function bump(){card.classList.remove('shake');void card.offsetWidth;card.classList.add('shake');}
+  function floatText(txt){
+    const p=document.createElement('div');
+    p.className='float-pop';
+    p.textContent=txt;
+    p.style.left=(50+(Math.random()*22-11))+'%';
+    p.style.top=(52+Math.random()*10)+'%';
+    floatLayer.appendChild(p);
+    setTimeout(()=>p.remove(),1100);
+  }
+  function maybeBonus(){
+    if(Math.random()<0.6){
+      const b=[20,30,50][Math.floor(Math.random()*3)];
+      setTimeout(()=>floatText('+'+b+'秒'),200+Math.random()*350);
+    }
+  }
   function startTimer(onTimeout){
     clearInterval(timer);
     timer=setInterval(()=>{
@@ -495,12 +522,13 @@
     };
     modal.classList.add('show');
   }
-  function openForceModal(text){openModal(text,'好',()=>showResult('好，一直好！','永远做朋友'));}
+  function openForceModal(text){openModal(text,'好',()=>showResult('好，一直好！','我喜欢你'));}
   modal.addEventListener('click',e=>{if(e.target===modal)modalClose.click();});
 
   function back(){
     clearInterval(timer); clearInterval(carouselTimer); timer=carouselTimer=null;
     confettiBox.innerHTML='';
+    floatLayer.innerHTML='';
     mainScreen.classList.remove('show');
     setTimeout(()=>{selectScreen.classList.add('show');avatar.innerHTML='';cardInner.innerHTML='';},200);
   }
