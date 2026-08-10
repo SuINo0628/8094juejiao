@@ -61,10 +61,10 @@
   .friend{
     position:relative;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
-    background:color-mix(in srgb,var(--accent) 9%,#fff);
+    background:var(--surface);
     border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));
     border-radius:18px;
-    padding:26px 10px 24px;
+    padding:30px 10px 28px;
     box-shadow:var(--shadow-sm);
     cursor:pointer;border:none;
     transition:transform .18s ease,box-shadow .18s ease,border-color .2s ease,background .2s ease;
@@ -73,13 +73,9 @@
   @media(hover:hover){
     .friend:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));}
   }
-  .friend-avatar{
-    width:11px;height:11px;border-radius:50%;
-    background:color-mix(in srgb,var(--accent) 72%,#2C2620);
-    margin-bottom:12px;transition:transform .2s ease;
-  }
-  .friend:active .friend-avatar{transform:scale(.85);}
-  .friend-name{font-size:16px;font-weight:800;color:var(--ink);text-align:center;line-height:1.35;}
+  .friend-name{font-size:16px;font-weight:800;color:var(--accent);text-align:center;line-height:1.4;
+    transition:transform .2s ease;}
+  .friend:active .friend-name{transform:scale(.94);}
 
   /* ============ 互动页 ============ */
   #mainScreen{background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 10%,var(--bg)) 0%, var(--bg) 50%);}
@@ -119,9 +115,9 @@
 
   .avatar-zone{position:relative;width:min(58vw,230px);height:min(58vw,230px);flex-shrink:0;
     animation:pop .55s cubic-bezier(.34,1.56,.64,1);}
-  .avatar{width:100%;height:100%;animation:floaty 5s ease-in-out infinite;
-    display:flex;align-items:center;justify-content:center;}
-  .avatar img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
+  .avatar{position:relative;width:100%;height:100%;animation:floaty 5s ease-in-out infinite;}
+  .img-single{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .img-single img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
   @keyframes floaty{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-11px) scale(1.025);}}
   @keyframes pop{0%{transform:scale(.55);opacity:0;}100%{transform:scale(1);opacity:1;}}
 
@@ -294,7 +290,7 @@
     tiyuanbu:{name:'踢圆步',images:['tiyuanbu.png'],
       dialog:{kind:'kick',text:'你想踢二十秒正步吗？',yes:'想',no:'不想',yesDelta:10}},
     andelei:{name:'安德烈',images:['andelei.png'],
-      dialog:{kind:'choice',text:'你想werwerwer吗？',
+      dialog:{kind:'wer',text:'你想werwerwer吗？',
         options:[{label:'wer',result:'好耶'},{label:'werwer',result:'好耶耶'}]}},
     istp:{name:'ISTP',images:['ISTP.jpg'],dialog:breakup()},
     nainiumao:{name:'奶牛猫',images:['nainiumao.jpg'],dialog:breakup()},
@@ -321,12 +317,11 @@
   const modalText=document.getElementById('modalText');
   const modalClose=document.getElementById('modalClose');
 
-  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0;
+  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0,shown120=false;
 
   function buildWall(){
     wall.innerHTML=Object.entries(characters).map(([id,c])=>`
       <button class="friend" data-id="${id}" aria-label="${c.name}" style="--accent:${COLORS[id]}">
-        <span class="friend-avatar"></span>
         <span class="friend-name">${c.name}</span>
       </button>`).join('');
     wall.querySelectorAll('.friend').forEach(el=>{
@@ -342,7 +337,7 @@
     hiTag.textContent='这是'+c.name;
     avatarZone.style.animation='none'; void avatarZone.offsetWidth; avatarZone.style.animation='';
     if(c.images.length===1){
-      avatar.innerHTML=`<img src="${c.images[0]}" alt="${c.name}">`;
+      avatar.innerHTML=`<div class="img-single"><img src="${c.images[0]}" alt="${c.name}"></div>`;
     }else{
       avatar.innerHTML=buildCarousel(c.images,c.name);
       setupCarousel();
@@ -370,7 +365,7 @@
 
   function reset(){
     clearInterval(timer); clearInterval(carouselTimer); timer=carouselTimer=null;
-    modalOpen=false; modal.classList.remove('show');
+    modalOpen=false; shown120=false; modal.classList.remove('show');
     floatLayer.innerHTML='';
     card.style.display='block'; card.classList.remove('shake');
     result.classList.remove('show');
@@ -402,10 +397,15 @@
           <button class="btn ghost" id="noBtn">${d.no}</button>
         </div>`;
       document.getElementById('yesBtn').onclick=()=>{
+        const before=time;
         time+=d.yesDelta||10; if(time>total)total=time; setRing(time,total); bump();
+        floatText('+'+(d.yesDelta||10)+'秒'); maybeBonus();
+        if(time>=120 && before<120){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
       };
       document.getElementById('noBtn').onclick=()=>{
-        time-=d.noDelta||10; setRing(time,total); bump(); if(time<=0)reconcile();
+        time-=d.noDelta||10; setRing(time,total); bump(); floatText('-'+(d.noDelta||10)+'秒');
+        if(time<120)shown120=false;
+        if(time<=0)reconcile();
       };
       startTimer();
     }else if(d.kind==='kick'){
@@ -424,6 +424,9 @@
       cardInner.innerHTML=`<div class="question">${d.text}</div>${ringHTML(time)}<div class="btns" id="opt"></div>`;
       fillOpts(d.options,()=>showResult('好，一直好！','我喜欢你'));
       startTimer(()=>openForceModal('你必须和我好！'));
+    }else if(d.kind==='wer'){
+      cardInner.innerHTML=`<div class="question">${d.text}</div><div class="btns" id="opt"></div>`;
+      fillOpts(d.options,()=>{floatText('werwerwer');showResult('好耶','贴贴 / 抱抱 / 击掌');werLoop();});
     }else{
       cardInner.innerHTML=`<div class="question">${d.text}</div><div class="btns" id="opt"></div>`;
       fillOpts(d.options,r=>showResult(r,'贴贴 / 抱抱 / 击掌'));
@@ -455,6 +458,14 @@
       const b=[20,30,50][Math.floor(Math.random()*3)];
       setTimeout(()=>floatText('+'+b+'秒'),200+Math.random()*350);
     }
+  }
+  function werLoop(){
+    let n=0;
+    const iv=setInterval(()=>{
+      if(!result.classList.contains('show')){clearInterval(iv);return;}
+      floatText('werwerwer');
+      if(++n>6)clearInterval(iv);
+    },420);
   }
   function startTimer(onTimeout){
     clearInterval(timer);
