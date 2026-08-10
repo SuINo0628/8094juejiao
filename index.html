@@ -317,7 +317,7 @@
   const modalText=document.getElementById('modalText');
   const modalClose=document.getElementById('modalClose');
 
-  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0,shown120=false;
+  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0,shown120=false,werCount=0;
 
   function buildWall(){
     wall.innerHTML=Object.entries(characters).map(([id,c])=>`
@@ -336,13 +336,13 @@
     current=c; applyTheme(id);
     hiTag.textContent='这是'+c.name;
     avatarZone.style.animation='none'; void avatarZone.offsetWidth; avatarZone.style.animation='';
+    reset();
     if(c.images.length===1){
       avatar.innerHTML=`<div class="img-single"><img src="${c.images[0]}" alt="${c.name}"></div>`;
     }else{
       avatar.innerHTML=buildCarousel(c.images,c.name);
       setupCarousel();
     }
-    reset();
     selectScreen.classList.remove('show');
     setTimeout(()=>mainScreen.classList.add('show'),40);
   }
@@ -425,8 +425,13 @@
       fillOpts(d.options,()=>showResult('好，一直好！','我喜欢你'));
       startTimer(()=>openForceModal('你必须和我好！'));
     }else if(d.kind==='wer'){
-      cardInner.innerHTML=`<div class="question">${d.text}</div><div class="btns" id="opt"></div>`;
-      fillOpts(d.options,()=>{floatText('werwerwer');showResult('好耶','贴贴 / 抱抱 / 击掌');werLoop();});
+      werCount=0;
+      cardInner.innerHTML=`
+        <div class="question">${d.text}</div>
+        <div class="btns" id="opt"></div>
+        <button class="btn ghost" id="werBack" style="width:100%;margin-top:14px;">返回</button>`;
+      fillOpts(d.options,()=>werBark());
+      document.getElementById('werBack').onclick=back;
     }else{
       cardInner.innerHTML=`<div class="question">${d.text}</div><div class="btns" id="opt"></div>`;
       fillOpts(d.options,r=>showResult(r,'贴贴 / 抱抱 / 击掌'));
@@ -459,13 +464,32 @@
       setTimeout(()=>floatText('+'+b+'秒'),200+Math.random()*350);
     }
   }
-  function werLoop(){
-    let n=0;
-    const iv=setInterval(()=>{
-      if(!result.classList.contains('show')){clearInterval(iv);return;}
-      floatText('werwerwer');
-      if(++n>6)clearInterval(iv);
-    },420);
+  /* 安德烈：比格吵闹特性 —— 每点一次 wer/werwer，丝带就多爆一次，且可一直点 */
+  function werBark(){
+    werCount++;
+    floatText('werwerwer');
+    werConfetti();
+    spawnOneRibbon();
+  }
+  function werConfetti(){
+    if(typeof confetti!=='function')return;
+    const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
+    const colors=[accent].concat(PALETTE);
+    confetti({particleCount:22+werCount*5,spread:82,startVelocity:42,origin:{y:0.62},colors,scalar:1.1,shapes:['ribbon','square'],ticks:190});
+    setTimeout(()=>confetti({particleCount:14+werCount*3,angle:60,spread:50,origin:{x:0},colors,shapes:['ribbon','square']}),120);
+    setTimeout(()=>confetti({particleCount:14+werCount*3,angle:120,spread:50,origin:{x:1},colors,shapes:['ribbon','square']}),120);
+  }
+  function spawnOneRibbon(){
+    const pairs=[['#EE99BB','#F2A0C4'],['#8FC4E8','#9FD0EC'],['#F4B860','#F6C97A'],['#7FC8A9','#9AD9BD'],['#E0907A','#EFA68F'],['#9DBE5E','#B7D27E']];
+    const p=pairs[werCount%pairs.length];
+    const r=document.createElement('span');
+    r.className='ribbon';
+    r.style.background=`linear-gradient(180deg,${p[0]},${p[1]})`;
+    r.style.left=(Math.random()*100)+'%';
+    r.style.width=(7+Math.random()*7)+'px';
+    r.style.height=(26+Math.random()*18)+'px';
+    r.style.animationDuration=(2.8+Math.random()*1.8)+'s';
+    confettiBox.appendChild(r);
   }
   function startTimer(onTimeout){
     clearInterval(timer);
