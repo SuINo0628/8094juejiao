@@ -167,6 +167,8 @@
     filter:drop-shadow(0 10px 18px color-mix(in srgb,var(--accent) 26%,transparent));}
   .heart-water{transition:y .9s linear, height .9s linear;}
   .heart-outline{stroke:var(--accent);}
+  @keyframes heartPulse{0%{transform:scale(1);}40%{transform:scale(1.22);}100%{transform:scale(1);}}
+  .heart-wrap.pulse{animation:heartPulse .5s ease;}
 
   /* choice / wer 类（鸡翅包饭、路人橘、安德烈）：图略放大、选项下移 */
   .stage.spaced .avatar-zone{width:min(66vw,262px);height:min(66vw,262px);}
@@ -226,10 +228,10 @@
   .modal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(40,32,24,.5);}
   .modal.show{display:flex;animation:fade .25s ease;}
   @keyframes fade{from{opacity:0;}to{opacity:1;}}
-  .modal-card{width:100%;max-width:320px;background:var(--surface);border:1px solid var(--line);
+  .modal-card{width:100%;max-width:320px;background:var(--surface);border:2px solid color-mix(in srgb,var(--accent) 45%,var(--line));
     border-radius:22px;padding:32px 24px;text-align:center;box-shadow:var(--shadow);
     animation:pop .4s cubic-bezier(.34,1.56,.64,1);}
-  .modal-text{font-size:21px;font-weight:700;color:var(--ink);margin-bottom:24px;line-height:1.5;}
+  .modal-text{font-size:21px;font-weight:700;color:color-mix(in srgb,var(--accent) 58%,#2C2620);margin-bottom:24px;line-height:1.5;}
 
   @media(min-width:540px){
     .friend-wall{grid-template-columns:repeat(3,1fr);gap:16px 14px;}
@@ -294,7 +296,7 @@
   const characters={
     jichibaofan:{name:'鸡翅包饭',images:['jichibaofan.webp'],
       dialog:{kind:'choice',text:'Hi,偷穿我衣服的带眼镜的紫色狐狸，我想要你的眼镜。',
-        options:[{label:'给我',result:'好，拿去吧～'},{label:'给净汉',result:'那就给净汉咯'}]}},
+        options:[{label:'给我',result:'我拿走咯',sub:''}]}},
     mangzhong:{name:'芒种',images:['mangzhong.webp'],dialog:breakup()},
     lurenju:{name:'路人橘',images:['lurenju.webp'],
       dialog:{kind:'choice',text:'你想在橘子树下乘凉？',
@@ -302,9 +304,11 @@
     isfp:{name:'ISFP',images:['ISFP12937.webp'],dialog:breakup()},
     danhuangshuimu:{name:'蛋黄水母',images:['danhuangshuimu.webp'],
       dialog:{kind:'timedlove',text:'你要和我一直好吗？',start:20,
-        options:[{label:'要',result:'好，一直好！'},{label:'那肯定',result:'那必须一直好！'}]}},
+        options:[{label:'要',result:'好，一直好！',bump:0.34},{label:'那肯定',result:'那必须一直好！',bump:0.5}]}},
     enfp:{name:'ENFP',images:['1ENFP13155.webp','2ENFP13155.webp','3ENFP13155.webp'],dialog:breakup()},
-    candoudou:{name:'蚕豆豆',images:['candoudou.webp'],dialog:breakup()},
+    candoudou:{name:'蚕豆豆',images:['candoudou.webp'],
+      dialog:{kind:'pull',text:'你拉豆豆吗？',
+        options:[{label:'拉',amount:1,role:'primary'},{label:'不拉',amount:2,role:'ghost'}]}},
     mao:{name:'猫',images:['mao.webp'],dialog:breakup()},
     j9194:{name:'9194',images:['9194.webp'],dialog:breakup()},
     tiyuanbu:{name:'踢圆步',images:['tiyuanbu.webp'],
@@ -315,7 +319,8 @@
     istp:{name:'ISTP',images:['ISTP.webp'],dialog:breakup()},
     nainiumao:{name:'奶牛猫',images:['nainiumao.webp'],dialog:breakup()},
     pocky:{name:'Pocky',images:['Pocky.webp'],dialog:breakup()},
-    shiyue:{name:'十月',images:['shiyue.webp'],dialog:breakup()}
+    shiyue:{name:'十月',images:['shiyue.webp'],
+      dialog:{kind:'breakup',text:'郑函泽要和你绝交',start:20,yes:'哦',no:'哦',yesDelta:10,noDelta:10}}
   };
 
   const selectScreen=document.getElementById('selectScreen');
@@ -338,7 +343,7 @@
   const modalText=document.getElementById('modalText');
   const modalClose=document.getElementById('modalClose');
 
-  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0,shown120=false,werCount=0,tickUpdate=null;
+  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0,shown120=false,werCount=0,douCount=0,love=0,tickUpdate=null;
 
   function buildWall(){
     wall.innerHTML=Object.entries(characters).map(([id,c])=>`
@@ -350,7 +355,7 @@
     });
   }
 
-  function applyTheme(id){mainScreen.style.setProperty('--accent',COLORS[id]);}
+  function applyTheme(id){mainScreen.style.setProperty('--accent',COLORS[id]); modal.style.setProperty('--accent',COLORS[id]);}
 
   function enter(id){
     const c=characters[id]; if(!c)return;
@@ -420,12 +425,17 @@
       <path class="heart-outline" d="${d}" fill="none" stroke-width="5"/>
     </svg></div>`;
   }
-  function setHeart(rem,tot){
+  function setHeart(level){
     const w=document.getElementById('heartWater'); if(!w)return;
-    const level=Math.max(0,Math.min(1,rem/tot));
+    level=Math.max(0,Math.min(1,level));
     const top=(1-level)*192;
     w.setAttribute('y',top.toFixed(1));
     w.setAttribute('height',(192-top).toFixed(1));
+  }
+  function heartBump(){
+    const h=document.querySelector('.heart-wrap'); if(!h)return;
+    h.classList.remove('pulse'); void h.offsetWidth; h.classList.add('pulse');
+    setTimeout(()=>h.classList.remove('pulse'),520);
   }
 
   function render(d){
@@ -463,12 +473,19 @@
       document.getElementById('yesBtn').onclick=()=>{kickCount+=d.yesDelta||10;document.getElementById('kc').textContent='已踢 '+kickCount+' 秒';bump();floatText('+10秒');maybeBonus();};
       document.getElementById('noBtn').onclick=()=>openModal('要和你绝交','关闭',null);
     }else if(d.kind==='timedlove'){
-      time=d.start; total=d.start;
+      time=d.start; total=d.start; love=0.4;
       stage.classList.add('love');
       cardInner.innerHTML=`<div class="question">${d.text}</div>${heartHTML()}<div class="btns" id="opt"></div>`;
-      setHeart(time,total);
-      fillOpts(d.options,()=>showResult('好，一直好！','我喜欢你'));
-      tickUpdate=()=>setHeart(time,total);
+      setHeart(love);
+      fillOpts(d.options,o=>{
+        love=Math.min(1,love+(o.bump||0.34));
+        setHeart(love); heartBump(); floatText('水位 +');
+        if(love>=1){
+          clearInterval(timer); timer=null;
+          setTimeout(()=>showResult(o.result||'好，一直好！','我喜欢你'),650);
+        }
+      });
+      tickUpdate=()=>{ if(time>0){ love=Math.max(0,love-0.02); setHeart(love); } };
       startTimer(()=>openForceModal('你必须和我好！'));
     }else if(d.kind==='wer'){
       werCount=0;
@@ -479,10 +496,22 @@
         <button class="btn ghost" id="werBack" style="width:100%;margin-top:14px;">返回</button>`;
       fillOpts(d.options,()=>werBark());
       document.getElementById('werBack').onclick=back;
+    }else if(d.kind==='pull'){
+      douCount=0;
+      stage.classList.add('spaced');
+      cardInner.innerHTML=`
+        <div class="question">${d.text}</div>
+        <div class="btns" id="opt"></div>
+        <button class="btn ghost" id="pullBack" style="width:100%;margin-top:14px;">返回</button>`;
+      fillOpts(d.options,o=>{
+        douBark(o);
+        if(o.label==='不拉') openModal('我要和你绝交','好',null);
+      });
+      document.getElementById('pullBack').onclick=back;
     }else{
       stage.classList.add('spaced');
       cardInner.innerHTML=`<div class="question">${d.text}</div><div class="btns" id="opt"></div>`;
-      fillOpts(d.options,r=>showResult(r,'贴贴 / 抱抱 / 击掌'));
+      fillOpts(d.options,o=>showResult(o.result,o.sub));
     }
   }
 
@@ -490,8 +519,8 @@
     const box=document.getElementById('opt');
     opts.forEach(o=>{
       const b=document.createElement('button');
-      b.className='btn primary'; b.textContent=o.label;
-      b.onclick=()=>onPick(o.result);
+      b.className='btn '+(o.role||'primary'); b.textContent=o.label;
+      b.onclick=()=>onPick(o);
       box.appendChild(b);
     });
   }
@@ -527,9 +556,9 @@
     setTimeout(()=>confetti({particleCount:14+werCount*3,angle:60,spread:50,origin:{x:0},colors,shapes:['ribbon','square']}),120);
     setTimeout(()=>confetti({particleCount:14+werCount*3,angle:120,spread:50,origin:{x:1},colors,shapes:['ribbon','square']}),120);
   }
-  function spawnOneRibbon(){
+  function spawnOneRibbon(idx){
     const pairs=[['#EE99BB','#F2A0C4'],['#8FC4E8','#9FD0EC'],['#F4B860','#F6C97A'],['#7FC8A9','#9AD9BD'],['#E0907A','#EFA68F'],['#9DBE5E','#B7D27E']];
-    const p=pairs[werCount%pairs.length];
+    const p=pairs[(typeof idx==='number'?idx:werCount)%pairs.length];
     const r=document.createElement('span');
     r.className='ribbon';
     r.style.background=`linear-gradient(180deg,${p[0]},${p[1]})`;
@@ -538,6 +567,22 @@
     r.style.height=(26+Math.random()*18)+'px';
     r.style.animationDuration=(2.8+Math.random()*1.8)+'s';
     confettiBox.appendChild(r);
+  }
+  /* 蚕豆豆：拉豆豆 —— 每点一次豆豆+N，飘字 + 彩带 + 丝带（比 werwer 稍轻一点） */
+  function douBark(o){
+    douCount++;
+    floatText('豆豆+'+o.amount);
+    douConfetti(o.amount);
+    spawnOneRibbon(douCount);
+  }
+  function douConfetti(amount){
+    if(typeof confetti!=='function')return;
+    const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
+    const colors=[accent].concat(PALETTE);
+    const n=(amount===2?38:22);
+    confetti({particleCount:n,spread:80,startVelocity:40,origin:{y:0.62},colors,scalar:1.1,shapes:['ribbon','square'],ticks:190});
+    setTimeout(()=>confetti({particleCount:Math.round(n*0.6),angle:60,spread:50,origin:{x:0},colors,shapes:['ribbon','square']}),120);
+    setTimeout(()=>confetti({particleCount:Math.round(n*0.6),angle:120,spread:50,origin:{x:1},colors,shapes:['ribbon','square']}),120);
   }
   function startTimer(onTimeout){
     clearInterval(timer);
@@ -554,7 +599,7 @@
     clearInterval(timer); timer=null;
     card.style.display='none';
     resultText.textContent=text;
-    resultSub.textContent=sub||'贴贴 / 抱抱 / 击掌';
+    resultSub.textContent=(sub===undefined)?'贴贴 / 抱抱 / 击掌':sub;
     result.classList.add('show');
     celebrate();
     spawnRibbons();
