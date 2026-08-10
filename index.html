@@ -113,20 +113,11 @@
     transform:rotate(45deg);
   }
 
-  .avatar-zone{position:relative;width:min(58vw,230px);height:min(58vw,230px);flex-shrink:0;
+  .avatar-zone{position:relative;z-index:2;width:min(58vw,230px);height:min(58vw,230px);flex-shrink:0;
     animation:pop .55s cubic-bezier(.34,1.56,.64,1);}
   .avatar{position:relative;width:100%;height:100%;animation:floaty 5s ease-in-out infinite;}
   .img-single{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
   .img-single img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
-  .img-hit{animation:imgHit .45s ease;}
-  @keyframes imgHit{
-    0%{transform:translate(0,0) rotate(0);}
-    15%{transform:translate(-9px,3px) rotate(-5deg);filter:drop-shadow(0 0 10px color-mix(in srgb,var(--accent) 85%,transparent)) brightness(1.2);}
-    32%{transform:translate(8px,-3px) rotate(4deg);}
-    50%{transform:translate(-6px,2px) rotate(-3deg);}
-    68%{transform:translate(5px,0) rotate(2deg);}
-    100%{transform:translate(0,0) rotate(0);filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
-  }
   @keyframes floaty{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-11px) scale(1.025);}}
   @keyframes pop{0%{transform:scale(.55);opacity:0;}100%{transform:scale(1);opacity:1;}}
 
@@ -234,13 +225,30 @@
     100%{opacity:0;transform:translate(-50%,-180%) scale(1);}
   }
   /* 蛋黄水母：点击飘出的背景漂浮爱心（粉色，铺满全屏，慢速上升） */
-  .bg-hearts{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none;}
+  .bg-hearts{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
   .bg-heart{position:absolute;bottom:-44px;color:#EE99BB;opacity:.85;
     pointer-events:none;animation:bgHeartRise var(--dur,5.5s) ease-in forwards;}
   @keyframes bgHeartRise{
     0%{transform:translateY(0) translateX(0) scale(.6) rotate(-10deg);opacity:0;}
     10%{opacity:.85;}
     100%{transform:translateY(-112vh) translateX(var(--drift,24px)) scale(1.15) rotate(8deg);opacity:0;}
+  }
+
+  /* 彩带前后景物理效果：后景画布沉到图片/卡片之后，前景画布盖在最上层 */
+  .conf-canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:31;}
+  #confettiBack{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+  /* 彩带落在边框上：停靠在卡片底缘，轻微回弹后停留再淡出 */
+  .ribbon-rest{position:fixed;z-index:32;border-radius:5px;
+    box-shadow:0 2px 6px rgba(40,30,20,.18);pointer-events:none;
+    animation:ribbonRest 3.8s cubic-bezier(.3,.8,.4,1) forwards;}
+  @keyframes ribbonRest{
+    0%{transform:translateY(-36px) rotate(0deg);opacity:0;}
+    16%{opacity:1;}
+    34%{transform:translateY(0) rotate(var(--rot,0deg));}
+    46%{transform:translateY(-8px) rotate(var(--rot,0deg));}
+    60%{transform:translateY(0) rotate(var(--rot,0deg));}
+    84%{opacity:1;}
+    100%{transform:translateY(0) rotate(var(--rot,0deg));opacity:0;}
   }
 
   /* 弹窗 */
@@ -299,6 +307,7 @@
 </div>
 
 <div class="confetti" id="confetti"></div>
+  <canvas id="confettiFront" class="conf-canvas"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js" async></script>
 <script>
@@ -314,34 +323,34 @@
   const breakup=d=>Object.assign({kind:'breakup',text:'崔胜澈8094要和你绝交',start:20,yes:'同意',no:'拒绝',yesDelta:10,noDelta:10},d);
 
   const characters={
-    jichibaofan:{name:'鸡翅包饭',images:['jichibaofan.png'],
+    jichibaofan:{name:'鸡翅包饭',images:['jichibaofan.webp'],
       dialog:{kind:'choice',text:'Hi,偷穿我衣服的带眼镜的紫色狐狸，我想要你的眼镜。',
         options:[{label:'给我',result:'我拿走咯',sub:''}]}},
-    mangzhong:{name:'芒种',images:['mangzhong.png'],
+    mangzhong:{name:'芒种',images:['mangzhong.webp'],
       dialog:{kind:'kongsu',text:'崔胜澈8094写了一大堆话控诉你',
         options:[{label:'同意',role:'primary'},{label:'不同意',role:'ghost'}]}},
-    lurenju:{name:'路人橘',images:['lurenju.png'],
+    lurenju:{name:'路人橘',images:['lurenju.webp'],
       dialog:{kind:'choice',text:'你想在橘子树下乘凉？',
         options:[{label:'想',result:'那我们去找棵橘子树吧～'},{label:'非常想',result:'太好了，马上出发！'}]}},
-    isfp:{name:'ISFP',images:['ISFP12937.png'],dialog:breakup()},
-    danhuangshuimu:{name:'蛋黄水母',images:['danhuangshuimu.png'],
+    isfp:{name:'ISFP',images:['ISFP12937.webp'],dialog:breakup()},
+    danhuangshuimu:{name:'蛋黄水母',images:['danhuangshuimu.webp'],
       dialog:{kind:'timedlove',text:'你要和我一直好吗？',start:20,
         options:[{label:'要',result:'好，一直好！',bump:0.1},{label:'那肯定',result:'那必须一直好！',bump:0.16}]}},
-    enfp:{name:'ENFP',images:['1ENFP13155.png','2ENFP13155.png','3ENFP13155.png'],dialog:breakup()},
-    candoudou:{name:'蚕豆豆',images:['candoudou.jpg'],
+    enfp:{name:'ENFP',images:['1ENFP13155.webp','2ENFP13155.webp','3ENFP13155.webp'],dialog:breakup()},
+    candoudou:{name:'蚕豆豆',images:['candoudou.webp'],
       dialog:{kind:'pull',text:'你拉豆豆吗？',
-        options:[{label:'拉',amount:1,role:'primary'},{label:'不拉',amount:2,role:'ghost'}]}},
-    mao:{name:'猫',images:['mao.png'],dialog:breakup()},
-    j9194:{name:'9194',images:['9194.png'],dialog:breakup()},
-    tiyuanbu:{name:'踢圆步',images:['tiyuanbu.png'],
+        options:[{label:'拉',amount:20,role:'primary'},{label:'不拉',amount:20,role:'ghost'}]}},
+    mao:{name:'猫',images:['mao.webp'],dialog:breakup()},
+    j9194:{name:'9194',images:['9194.webp'],dialog:breakup()},
+    tiyuanbu:{name:'踢圆步',images:['tiyuanbu.webp'],
       dialog:{kind:'kick',text:'你想踢二十秒正步吗？',yes:'想',no:'不想',yesDelta:10}},
-    andelei:{name:'安德烈',images:['andelei.png'],
+    andelei:{name:'安德烈',images:['andelei.webp'],
       dialog:{kind:'wer',text:'你想werwerwer吗？',
         options:[{label:'wer',result:'好耶'},{label:'werwer',result:'好耶耶'}]}},
-    istp:{name:'ISTP',images:['ISTP.jpg'],dialog:breakup()},
-    nainiumao:{name:'奶牛猫',images:['nainiumao.jpg'],dialog:breakup()},
-    pocky:{name:'Pocky',images:['Pocky.png'],dialog:breakup()},
-    shiyue:{name:'十月',images:['shiyue.png'],
+    istp:{name:'ISTP',images:['ISTP.webp'],dialog:breakup()},
+    nainiumao:{name:'奶牛猫',images:['nainiumao.webp'],dialog:breakup()},
+    pocky:{name:'Pocky',images:['Pocky.webp'],dialog:breakup()},
+    shiyue:{name:'十月',images:['shiyue.webp'],
       dialog:{kind:'breakup',text:'郑函泽要和你绝交',start:20,yes:'哦',no:'哦',yesDelta:10,noDelta:10}}
   };
 
@@ -361,6 +370,50 @@
   const confettiBox=document.getElementById('confetti');
   const floatLayer=document.getElementById('floatLayer');
   const bgHearts=document.getElementById('bgHearts');
+  const confettiBackCv=document.getElementById('confettiBack');
+  const confettiFrontCv=document.getElementById('confettiFront');
+  let _cb=null,_cf=null;
+  function ensureConfetti(){
+    if(typeof confetti!=='function')return;
+    if(!_cb)_cb=confetti.create(confettiBackCv,{resize:true});
+    if(!_cf)_cf=confetti.create(confettiFrontCv,{resize:true});
+  }
+  /* 双层爆发：前景画布盖在图片上，后景画布沉到图片之后（更小更淡 = 更远），形成前后景深度 */
+  function layeredBurst(o){
+    ensureConfetti();
+    if(_cf)_cf(o);
+    if(_cb){
+      const b=Object.assign({},o);
+      b.scalar=(o.scalar||1)*0.8;
+      b.particleCount=Math.max(6,Math.round((o.particleCount||40)*0.55));
+      if(b.startVelocity)b.startVelocity=Math.round(b.startVelocity*0.92);
+      _cb(b);
+    }
+  }
+  /* 落定彩带：停靠在卡片底缘（结算时卡片隐藏则停靠在屏幕底边），轻微回弹后停留再淡出 */
+  function spawnRestRibbons(n){
+    const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
+    const colors=[accent].concat(PALETTE);
+    const card=document.getElementById('card');
+    const r=card.getBoundingClientRect();
+    const hidden=(r.width===0);
+    const left0=hidden?8:r.left+10;
+    const span=hidden?(window.innerWidth-16):(r.width-20);
+    const topY=hidden?(window.innerHeight-30):(r.bottom-30);
+    for(let i=0;i<n;i++){
+      const s=document.createElement('div');
+      s.className='ribbon-rest';
+      const c=colors[Math.floor(Math.random()*colors.length)];
+      s.style.background=`linear-gradient(180deg,${c},${c})`;
+      s.style.left=(left0+Math.random()*span)+'px';
+      s.style.top=topY+'px';
+      s.style.setProperty('--rot',(Math.random()*48-24)+'deg');
+      s.style.width=(8+Math.random()*5)+'px';
+      s.style.height=(26+Math.random()*16)+'px';
+      document.body.appendChild(s);
+      setTimeout(()=>s.remove(),3900);
+    }
+  }
   const stage=document.querySelector('.stage');
   const modal=document.getElementById('modal');
   const modalText=document.getElementById('modalText');
@@ -392,7 +445,6 @@
       avatar.innerHTML=buildCarousel(c.images,c.name);
       setupCarousel();
     }
-    if(id!=='danhuangshuimu') setupImageHit(id);
     selectScreen.classList.remove('show');
     setTimeout(()=>mainScreen.classList.add('show'),40);
   }
@@ -411,27 +463,6 @@
     go(0);
     clearInterval(carouselTimer);
     carouselTimer=setInterval(()=>go(idx+1),3000);
-  }
-  /* 点一下头像像被攻击一样抖一下 + 飘字；有倒计时时时间+120 */
-  function randomOrangeText(){
-    const n=[1,5,10][Math.floor(Math.random()*3)];
-    return Math.random()<0.5 ? '掉落橘子+'+n : '+'+n;
-  }
-  function setupImageHit(id){
-    const imgs=avatar.querySelectorAll('img');
-    imgs.forEach(img=>{
-      img.style.cursor='pointer';
-      img.addEventListener('click',()=>{
-        img.classList.remove('img-hit'); void img.offsetWidth; img.classList.add('img-hit');
-        floatText(id==='lurenju' ? randomOrangeText() : '被攻击！+120秒');
-        if(document.getElementById('ringNum')){
-          const before=time;
-          time+=120; if(time>total)total=time; setRing(time,total); bump();
-          if(time>=120 && before<120){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
-        }
-        setTimeout(()=>img.classList.remove('img-hit'),460);
-      });
-    });
   }
 
   function reset(){
@@ -515,7 +546,18 @@
           <button class="btn primary" id="yesBtn">${d.yes}</button>
           <button class="btn ghost" id="noBtn">${d.no}</button>
         </div>`;
-      document.getElementById('yesBtn').onclick=()=>{kickCount+=d.yesDelta||10;document.getElementById('kc').textContent='已踢 '+kickCount+' 秒';bump();floatText('+10秒');maybeBonus();};
+      document.getElementById('yesBtn').onclick=()=>{
+        const add=d.yesDelta||10;
+        kickCount+=add;
+        document.getElementById('kc').textContent='已踢 '+kickCount+' 秒';
+        bump(); floatText('+'+add+'秒');
+        if(Math.random()<0.6){
+          const b=[20,30,50][Math.floor(Math.random()*3)];
+          kickCount+=b;
+          document.getElementById('kc').textContent='已踢 '+kickCount+' 秒';
+          setTimeout(()=>floatText('+'+b+'秒'),200+Math.random()*350);
+        }
+      };
       document.getElementById('noBtn').onclick=()=>openModal('要和你绝交','关闭',null);
     }else if(d.kind==='timedlove'){
       time=d.start; total=d.start; love=0.4;
@@ -617,18 +659,19 @@
   /* 安德烈：比格吵闹特性 —— 每点一次 wer/werwer，丝带就多爆一次，且可一直点 */
   function werBark(){
     werCount++;
-    floatText('werwerwer');
+    floatText('Wer*120');
     werConfetti();
     spawnOneRibbon();
+    spawnRestRibbons(3);
   }
   function werConfetti(count){
-    if(typeof confetti!=='function')return;
     const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
     const colors=[accent].concat(PALETTE);
     const c=(typeof count==='number'?count:werCount);
-    confetti({particleCount:22+c*5,spread:82,startVelocity:42,origin:{y:0.62},colors,scalar:1.1,shapes:['ribbon','square'],ticks:190});
-    setTimeout(()=>confetti({particleCount:14+c*3,angle:60,spread:50,origin:{x:0},colors,shapes:['ribbon','square']}),120);
-    setTimeout(()=>confetti({particleCount:14+c*3,angle:120,spread:50,origin:{x:1},colors,shapes:['ribbon','square']}),120);
+    const base={particleCount:22+c*5,spread:82,startVelocity:42,origin:{y:0.62},colors,scalar:1.1,shapes:['ribbon','square'],ticks:190};
+    layeredBurst(base);
+    setTimeout(()=>layeredBurst({particleCount:14+c*3,angle:60,spread:50,origin:{x:0},colors,shapes:['ribbon','square']}),120);
+    setTimeout(()=>layeredBurst({particleCount:14+c*3,angle:120,spread:50,origin:{x:1},colors,shapes:['ribbon','square']}),120);
   }
   /* 芒种：控诉 —— 点同意就一直"继续控诉你"，werwer 同款漂浮+彩带，可反复点 */
   function kongsuBark(){
@@ -636,6 +679,7 @@
     floatText('继续控诉你');
     werConfetti(kongsuCount);
     spawnOneRibbon(kongsuCount);
+    spawnRestRibbons(3);
   }
   function spawnOneRibbon(idx){
     const pairs=[['#EE99BB','#F2A0C4'],['#8FC4E8','#9FD0EC'],['#F4B860','#F6C97A'],['#7FC8A9','#9AD9BD'],['#E0907A','#EFA68F'],['#9DBE5E','#B7D27E']];
@@ -655,15 +699,15 @@
     floatText('豆豆+'+o.amount);
     douConfetti(o.amount);
     spawnOneRibbon(douCount);
+    spawnRestRibbons(3);
   }
   function douConfetti(amount){
-    if(typeof confetti!=='function')return;
     const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
     const colors=[accent].concat(PALETTE);
     const n=(amount===2?38:22);
-    confetti({particleCount:n,spread:80,startVelocity:40,origin:{y:0.62},colors,scalar:1.1,shapes:['ribbon','square'],ticks:190});
-    setTimeout(()=>confetti({particleCount:Math.round(n*0.6),angle:60,spread:50,origin:{x:0},colors,shapes:['ribbon','square']}),120);
-    setTimeout(()=>confetti({particleCount:Math.round(n*0.6),angle:120,spread:50,origin:{x:1},colors,shapes:['ribbon','square']}),120);
+    layeredBurst({particleCount:n,spread:80,startVelocity:40,origin:{y:0.62},colors,scalar:1.1,shapes:['ribbon','square'],ticks:190});
+    setTimeout(()=>layeredBurst({particleCount:Math.round(n*0.6),angle:60,spread:50,origin:{x:0},colors,shapes:['ribbon','square']}),120);
+    setTimeout(()=>layeredBurst({particleCount:Math.round(n*0.6),angle:120,spread:50,origin:{x:1},colors,shapes:['ribbon','square']}),120);
   }
   function startTimer(onTimeout){
     clearInterval(timer);
@@ -689,17 +733,17 @@
 
   /* canvas-confetti 丝带彩带（小红书/抖音风，最火的庆祝库） */
   function celebrate(){
-    if(typeof confetti!=='function')return;
     const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
     const colors=[accent].concat(PALETTE);
-    confetti({particleCount:130,spread:85,startVelocity:46,origin:{y:0.7},colors,scalar:1.15,shapes:['ribbon','square','circle'],ticks:200});
-    setTimeout(()=>confetti({particleCount:90,angle:60,spread:55,origin:{x:0},colors,shapes:['ribbon','square']}),180);
-    setTimeout(()=>confetti({particleCount:90,angle:120,spread:55,origin:{x:1},colors,shapes:['ribbon','square']}),180);
+    layeredBurst({particleCount:130,spread:85,startVelocity:46,origin:{y:0.7},colors,scalar:1.15,shapes:['ribbon','square','circle'],ticks:200});
+    setTimeout(()=>layeredBurst({particleCount:90,angle:60,spread:55,origin:{x:0},colors,shapes:['ribbon','square']}),180);
+    setTimeout(()=>layeredBurst({particleCount:90,angle:120,spread:55,origin:{x:1},colors,shapes:['ribbon','square']}),180);
     let n=0;
     const iv=setInterval(()=>{
-      confetti({particleCount:34,spread:100,startVelocity:26,origin:{y:0},colors,scalar:0.9,shapes:['ribbon']});
+      layeredBurst({particleCount:34,spread:100,startVelocity:26,origin:{y:0},colors,scalar:0.9,shapes:['ribbon']});
       if(++n>4)clearInterval(iv);
     },320);
+    spawnRestRibbons(6);
   }
 
   /* 飘落丝带（CSS 层，保证丝带质感） */
