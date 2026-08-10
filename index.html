@@ -152,6 +152,26 @@
   .ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     font-size:40px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums;}
 
+  /* ============ 蛋黄水母：跳动爱心 + 红水下降 ============ */
+  .heart-wrap{position:relative;width:100%;height:100%;margin:0 auto;
+    animation:beat 1.15s ease-in-out infinite;transform-origin:50% 55%;}
+  .stage.love .avatar-zone{width:min(72vw,288px);height:min(72vw,288px);}
+  @keyframes beat{
+    0%,100%{transform:scale(1);}
+    14%{transform:scale(1.13);}
+    28%{transform:scale(1);}
+    42%{transform:scale(1.07);}
+    56%{transform:scale(1);}
+  }
+  .heart-svg{width:100%;height:100%;display:block;overflow:visible;
+    filter:drop-shadow(0 10px 18px color-mix(in srgb,var(--accent) 26%,transparent));}
+  .heart-water{transition:y .9s linear, height .9s linear;}
+  .heart-outline{stroke:var(--accent);}
+
+  /* choice / wer 类（鸡翅包饭、路人橘、安德烈）：图略放大、选项下移 */
+  .stage.spaced .avatar-zone{width:min(66vw,262px);height:min(66vw,262px);}
+  .stage.spaced .card{margin-top:14px;}
+
   .btns{display:flex;gap:12px;margin-top:4px;}
   .btn{
     flex:1;min-height:54px;border:none;border-radius:16px;
@@ -258,7 +278,7 @@
 
 <div class="confetti" id="confetti"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js" async></script>
 <script>
   const COLORS={
     jichibaofan:'#E79A6B', mangzhong:'#9DBE5E', lurenju:'#F0A24E',
@@ -272,30 +292,30 @@
   const breakup=d=>Object.assign({kind:'breakup',text:'崔胜澈8094要和你绝交',start:20,yes:'同意',no:'拒绝',yesDelta:10,noDelta:10},d);
 
   const characters={
-    jichibaofan:{name:'鸡翅包饭',images:['jichibaofan.png'],
+    jichibaofan:{name:'鸡翅包饭',images:['jichibaofan.webp'],
       dialog:{kind:'choice',text:'Hi,偷穿我衣服的带眼镜的紫色狐狸，我想要你的眼镜。',
         options:[{label:'给我',result:'好，拿去吧～'},{label:'给净汉',result:'那就给净汉咯'}]}},
-    mangzhong:{name:'芒种',images:['mangzhong.png'],dialog:breakup()},
-    lurenju:{name:'路人橘',images:['lurenju.png'],
+    mangzhong:{name:'芒种',images:['mangzhong.webp'],dialog:breakup()},
+    lurenju:{name:'路人橘',images:['lurenju.webp'],
       dialog:{kind:'choice',text:'你想在橘子树下乘凉？',
         options:[{label:'想',result:'那我们去找棵橘子树吧～'},{label:'非常想',result:'太好了，马上出发！'}]}},
-    isfp:{name:'ISFP',images:['ISFP12937.png'],dialog:breakup()},
-    danhuangshuimu:{name:'蛋黄水母',images:['danhuangshuimu.png'],
+    isfp:{name:'ISFP',images:['ISFP12937.webp'],dialog:breakup()},
+    danhuangshuimu:{name:'蛋黄水母',images:['danhuangshuimu.webp'],
       dialog:{kind:'timedlove',text:'你要和我一直好吗？',start:20,
         options:[{label:'要',result:'好，一直好！'},{label:'那肯定',result:'那必须一直好！'}]}},
-    enfp:{name:'ENFP',images:['1ENFP13155.png','2ENFP13155.png','3ENFP13155.png'],dialog:breakup()},
-    candoudou:{name:'蚕豆豆',images:['candoudou.jpg'],dialog:breakup()},
-    mao:{name:'猫',images:['mao.png'],dialog:breakup()},
-    j9194:{name:'9194',images:['9194.png'],dialog:breakup()},
-    tiyuanbu:{name:'踢圆步',images:['tiyuanbu.png'],
+    enfp:{name:'ENFP',images:['1ENFP13155.webp','2ENFP13155.webp','3ENFP13155.webp'],dialog:breakup()},
+    candoudou:{name:'蚕豆豆',images:['candoudou.webp'],dialog:breakup()},
+    mao:{name:'猫',images:['mao.webp'],dialog:breakup()},
+    j9194:{name:'9194',images:['9194.webp'],dialog:breakup()},
+    tiyuanbu:{name:'踢圆步',images:['tiyuanbu.webp'],
       dialog:{kind:'kick',text:'你想踢二十秒正步吗？',yes:'想',no:'不想',yesDelta:10}},
-    andelei:{name:'安德烈',images:['andelei.png'],
+    andelei:{name:'安德烈',images:['andelei.webp'],
       dialog:{kind:'wer',text:'你想werwerwer吗？',
         options:[{label:'wer',result:'好耶'},{label:'werwer',result:'好耶耶'}]}},
-    istp:{name:'ISTP',images:['ISTP.jpg'],dialog:breakup()},
-    nainiumao:{name:'奶牛猫',images:['nainiumao.jpg'],dialog:breakup()},
-    pocky:{name:'Pocky',images:['Pocky.png'],dialog:breakup()},
-    shiyue:{name:'十月',images:['shiyue.png'],dialog:breakup()}
+    istp:{name:'ISTP',images:['ISTP.webp'],dialog:breakup()},
+    nainiumao:{name:'奶牛猫',images:['nainiumao.webp'],dialog:breakup()},
+    pocky:{name:'Pocky',images:['Pocky.webp'],dialog:breakup()},
+    shiyue:{name:'十月',images:['shiyue.webp'],dialog:breakup()}
   };
 
   const selectScreen=document.getElementById('selectScreen');
@@ -313,11 +333,12 @@
   const backBtn=document.getElementById('backBtn');
   const confettiBox=document.getElementById('confetti');
   const floatLayer=document.getElementById('floatLayer');
+  const stage=document.querySelector('.stage');
   const modal=document.getElementById('modal');
   const modalText=document.getElementById('modalText');
   const modalClose=document.getElementById('modalClose');
 
-  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0,shown120=false,werCount=0;
+  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0,shown120=false,werCount=0,tickUpdate=null;
 
   function buildWall(){
     wall.innerHTML=Object.entries(characters).map(([id,c])=>`
@@ -364,8 +385,9 @@
   }
 
   function reset(){
-    clearInterval(timer); clearInterval(carouselTimer); timer=carouselTimer=null;
+    clearInterval(timer); clearInterval(carouselTimer); timer=carouselTimer=null; tickUpdate=null;
     modalOpen=false; shown120=false; modal.classList.remove('show');
+    stage.classList.remove('love','spaced');
     floatLayer.innerHTML='';
     card.style.display='block'; card.classList.remove('shake');
     result.classList.remove('show');
@@ -384,6 +406,26 @@
     const fg=document.querySelector('.ring-fg'),num=document.getElementById('ringNum');
     if(fg)fg.style.strokeDashoffset=C*(1-Math.max(0,rem)/tot);
     if(num)num.textContent=Math.max(0,rem);
+  }
+
+  /* 蛋黄水母的大爱心：内部红水随时间下降 */
+  function heartHTML(){
+    const d='M100 178 C40 128 20 88 20 60 C20 38 36 24 58 24 C78 24 94 38 100 54 C106 38 122 24 142 24 C164 24 180 38 180 60 C180 88 160 128 100 178 Z';
+    return `<div class="heart-wrap"><svg class="heart-svg" viewBox="0 0 200 192" preserveAspectRatio="xMidYMid meet">
+      <defs><clipPath id="hclip"><path d="${d}"/></clipPath></defs>
+      <g clip-path="url(#hclip)">
+        <rect x="0" y="0" width="200" height="192" fill="rgba(255,255,255,.6)"/>
+        <rect class="heart-water" id="heartWater" x="0" y="0" width="200" height="192" fill="#E8556B"/>
+      </g>
+      <path class="heart-outline" d="${d}" fill="none" stroke-width="5"/>
+    </svg></div>`;
+  }
+  function setHeart(rem,tot){
+    const w=document.getElementById('heartWater'); if(!w)return;
+    const level=Math.max(0,Math.min(1,rem/tot));
+    const top=(1-level)*192;
+    w.setAttribute('y',top.toFixed(1));
+    w.setAttribute('height',(192-top).toFixed(1));
   }
 
   function render(d){
@@ -407,6 +449,7 @@
         if(time<120)shown120=false;
         if(time<=0)reconcile();
       };
+      tickUpdate=()=>setRing(time,total);
       startTimer();
     }else if(d.kind==='kick'){
       kickCount=0;
@@ -421,11 +464,15 @@
       document.getElementById('noBtn').onclick=()=>openModal('要和你绝交','关闭',null);
     }else if(d.kind==='timedlove'){
       time=d.start; total=d.start;
-      cardInner.innerHTML=`<div class="question">${d.text}</div>${ringHTML(time)}<div class="btns" id="opt"></div>`;
+      stage.classList.add('love');
+      cardInner.innerHTML=`<div class="question">${d.text}</div>${heartHTML()}<div class="btns" id="opt"></div>`;
+      setHeart(time,total);
       fillOpts(d.options,()=>showResult('好，一直好！','我喜欢你'));
+      tickUpdate=()=>setHeart(time,total);
       startTimer(()=>openForceModal('你必须和我好！'));
     }else if(d.kind==='wer'){
       werCount=0;
+      stage.classList.add('spaced');
       cardInner.innerHTML=`
         <div class="question">${d.text}</div>
         <div class="btns" id="opt"></div>
@@ -433,6 +480,7 @@
       fillOpts(d.options,()=>werBark());
       document.getElementById('werBack').onclick=back;
     }else{
+      stage.classList.add('spaced');
       cardInner.innerHTML=`<div class="question">${d.text}</div><div class="btns" id="opt"></div>`;
       fillOpts(d.options,r=>showResult(r,'贴贴 / 抱抱 / 击掌'));
     }
@@ -495,7 +543,8 @@
     clearInterval(timer);
     timer=setInterval(()=>{
       if(modalOpen)return;
-      time--; setRing(time,total);
+      time--;
+      if(tickUpdate)tickUpdate();
       if(time<=0){clearInterval(timer);timer=null;onTimeout?onTimeout():reconcile();}
     },1000);
   }
