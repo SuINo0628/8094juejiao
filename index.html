@@ -392,7 +392,7 @@
       avatar.innerHTML=buildCarousel(c.images,c.name);
       setupCarousel();
     }
-    if(id!=='danhuangshuimu') setupImageHit();
+    if(id!=='danhuangshuimu') setupImageHit(id);
     selectScreen.classList.remove('show');
     setTimeout(()=>mainScreen.classList.add('show'),40);
   }
@@ -413,13 +413,17 @@
     carouselTimer=setInterval(()=>go(idx+1),3000);
   }
   /* 点一下头像像被攻击一样抖一下 + 飘字；有倒计时时时间+120 */
-  function setupImageHit(){
+  function randomOrangeText(){
+    const n=[1,5,10][Math.floor(Math.random()*3)];
+    return Math.random()<0.5 ? '掉落橘子+'+n : '+'+n;
+  }
+  function setupImageHit(id){
     const imgs=avatar.querySelectorAll('img');
     imgs.forEach(img=>{
       img.style.cursor='pointer';
       img.addEventListener('click',()=>{
         img.classList.remove('img-hit'); void img.offsetWidth; img.classList.add('img-hit');
-        floatText('被攻击！+120秒');
+        floatText(id==='lurenju' ? randomOrangeText() : '被攻击！+120秒');
         if(document.getElementById('ringNum')){
           const before=time;
           time+=120; if(time>total)total=time; setRing(time,total); bump();
