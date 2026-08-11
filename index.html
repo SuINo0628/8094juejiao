@@ -561,27 +561,27 @@
       tickUpdate=()=>setRing(time,total);
       startTimer();
     }else if(d.kind==='kick'){
-      kickCount=0;
+      time=20; total=20;
       cardInner.innerHTML=`
         <div class="question">${d.text}</div>
-        <div class="counter" id="kc">已踢 0 秒</div>
+        ${ringHTML(time)}
         <div class="btns">
           <button class="btn primary" id="yesBtn">${d.yes}</button>
           <button class="btn ghost" id="noBtn">${d.no}</button>
         </div>`;
       document.getElementById('yesBtn').onclick=()=>{
         const add=d.yesDelta||10;
-        kickCount+=add;
-        document.getElementById('kc').textContent='已踢 '+kickCount+' 秒';
-        bump(); floatText('+'+add+'秒');
+        time+=add; if(time>total)total=time; setRing(time,total); bump();
+        floatText('+'+add+'秒');
         if(Math.random()<0.6){
           const b=[20,30,50][Math.floor(Math.random()*3)];
-          kickCount+=b;
-          document.getElementById('kc').textContent='已踢 '+kickCount+' 秒';
+          time+=b; if(time>total)total=time; setRing(time,total); bump();
           setTimeout(()=>floatText('+'+b+'秒'),200+Math.random()*350);
         }
       };
       document.getElementById('noBtn').onclick=()=>openModal('要和你绝交','关闭',null);
+      tickUpdate=()=>setRing(time,total);
+      startTimer(()=>showResult('踢完啦！',''));
     }else if(d.kind==='timedlove'){
       time=d.start; total=d.start; love=0.4;
       stage.classList.add('love');
