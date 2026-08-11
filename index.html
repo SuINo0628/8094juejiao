@@ -119,6 +119,8 @@
   .img-single{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
   .img-single img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
   @keyframes floaty{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-11px) scale(1.025);}}
+  @keyframes imgHit{0%,100%{transform:translate(0,0) rotate(0);}20%{transform:translate(-6px,2px) rotate(-4deg);}40%{transform:translate(6px,-2px) rotate(4deg);}60%{transform:translate(-4px,1px) rotate(-3deg);}80%{transform:translate(4px,-1px) rotate(3deg);}}
+  .img-hit{animation:imgHit .45s ease;}
   @keyframes pop{0%{transform:scale(.55);opacity:0;}100%{transform:scale(1);opacity:1;}}
 
   .carousel-box{position:absolute;inset:0;}
@@ -445,6 +447,7 @@
       avatar.innerHTML=buildCarousel(c.images,c.name);
       setupCarousel();
     }
+    if(id!=='danhuangshuimu') setupImageHit(id);
     selectScreen.classList.remove('show');
     setTimeout(()=>mainScreen.classList.add('show'),40);
   }
@@ -463,6 +466,26 @@
     go(0);
     clearInterval(carouselTimer);
     carouselTimer=setInterval(()=>go(idx+1),3000);
+  }
+  function randomOrangeText(){
+    const n=[1,5,10][Math.floor(Math.random()*3)];
+    return Math.random()<0.5 ? '掉落橘子+'+n : '+'+n;
+  }
+  function setupImageHit(id){
+    const imgs=avatar.querySelectorAll('img');
+    imgs.forEach(img=>{
+      img.style.cursor='pointer';
+      img.addEventListener('click',()=>{
+        img.classList.remove('img-hit'); void img.offsetWidth; img.classList.add('img-hit');
+        floatText(id==='lurenju' ? randomOrangeText() : '被攻击！+120秒');
+        if(document.getElementById('ringNum')){
+          const before=time;
+          time+=120; if(time>total)total=time; setRing(time,total); bump();
+          if(time>=120 && before<120){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
+        }
+        setTimeout(()=>img.classList.remove('img-hit'),460);
+      });
+    });
   }
 
   function reset(){
