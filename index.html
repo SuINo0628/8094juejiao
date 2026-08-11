@@ -119,8 +119,30 @@
   .img-single{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
   .img-single img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(60,45,30,.14));}
   @keyframes floaty{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-11px) scale(1.025);}}
-  @keyframes imgHit{0%,100%{transform:translate(0,0) rotate(0);}20%{transform:translate(-6px,2px) rotate(-4deg);}40%{transform:translate(6px,-2px) rotate(4deg);}60%{transform:translate(-4px,1px) rotate(-3deg);}80%{transform:translate(4px,-1px) rotate(3deg);}}
-  .img-hit{animation:imgHit .45s ease;}
+  @keyframes imgHit{
+    0%{transform:translate(0,0) rotate(0) scale(1);}
+    12%{transform:translate(-11px,4px) rotate(-8deg) scale(1.05);}
+    26%{transform:translate(13px,-5px) rotate(8deg) scale(.96);}
+    42%{transform:translate(-15px,5px) rotate(-10deg) scale(1.06);}
+    58%{transform:translate(12px,-4px) rotate(6deg) scale(.98);}
+    74%{transform:translate(-9px,3px) rotate(-5deg) scale(1.02);}
+    88%{transform:translate(6px,-2px) rotate(3deg) scale(1);}
+    100%{transform:translate(0,0) rotate(0) scale(1);}
+  }
+  @keyframes imgFlash{0%,100%{filter:none;}18%,46%,74%{filter:drop-shadow(0 0 10px #ff5a5a) brightness(1.3) sepia(.5) hue-rotate(-25deg) saturate(2.5);}}
+  .img-hit{animation:imgHit .5s cubic-bezier(.36,.07,.19,.97), imgFlash .5s ease;transform-origin:center;}
+  /* 被攻击：红环冲击 + 受击星星 */
+  @keyframes zoneFlash{0%,100%{box-shadow:0 0 0 0 rgba(255,77,77,0);}30%{box-shadow:0 0 0 7px rgba(255,77,77,.45);}}
+  .hit-zone{animation:zoneFlash .5s ease;}
+  .hit-star{position:absolute;left:50%;top:50%;pointer-events:none;z-index:5;animation:starFly .72s ease-out forwards;}
+  @keyframes starFly{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(0);}
+    25%{opacity:1;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.15) rotate(90deg);}
+    100%{opacity:0;transform:translate(calc(-50% + var(--dx)*1.9),calc(-50% + var(--dy)*1.9)) scale(.5) rotate(220deg);}
+  }
+  /* 被攻击飘字：放大+红色+抖动 */
+  .hit-pop{font-size:25px;font-weight:800;color:#FF4D4D;text-shadow:0 2px 7px rgba(255,80,80,.45);animation:hitPopShake .55s ease;}
+  @keyframes hitPopShake{0%,100%{transform:translate(-50%,-50%) rotate(0) scale(1);}20%{transform:translate(-50%,-50%) rotate(-7deg) scale(1.14);}40%{transform:translate(-50%,-50%) rotate(6deg) scale(1.06);}60%{transform:translate(-50%,-50%) rotate(-4deg) scale(1.02);}80%{transform:translate(-50%,-50%) rotate(3deg) scale(1);}}
   @keyframes pop{0%{transform:scale(.55);opacity:0;}100%{transform:scale(1);opacity:1;}}
 
   .carousel-box{position:absolute;inset:0;}
@@ -477,15 +499,37 @@
       img.style.cursor='pointer';
       img.addEventListener('click',()=>{
         img.classList.remove('img-hit'); void img.offsetWidth; img.classList.add('img-hit');
-        floatText(id==='lurenju' ? randomOrangeText() : '被攻击！+120秒');
+        if(avatarZone){avatarZone.classList.remove('hit-zone'); void avatarZone.offsetWidth; avatarZone.classList.add('hit-zone');}
+        spawnHitStars();
+        const p=floatText(id==='lurenju' ? randomOrangeText() : '被攻击！+120秒');
+        if(p)p.classList.add('hit-pop');
         if(document.getElementById('ringNum')){
           const before=time;
           time+=120; if(time>total)total=time; setRing(time,total); bump();
           if(time>=120 && before<120){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
         }
-        setTimeout(()=>img.classList.remove('img-hit'),460);
+        setTimeout(()=>img.classList.remove('img-hit'),520);
+        setTimeout(()=>{if(avatarZone)avatarZone.classList.remove('hit-zone');},520);
       });
     });
+  }
+  function spawnHitStars(){
+    if(!avatarZone)return;
+    const n=6;
+    for(let i=0;i<n;i++){
+      const s=document.createElement('div');
+      s.className='hit-star';
+      const ang=(Math.PI*2*i/n)+(Math.random()*0.5-0.25);
+      const dist=64+Math.random()*42;
+      s.style.setProperty('--dx',(Math.cos(ang)*dist).toFixed(0)+'px');
+      s.style.setProperty('--dy',(Math.sin(ang)*dist).toFixed(0)+'px');
+      s.style.left='50%'; s.style.top='50%';
+      const sz=15+Math.random()*12; s.style.width=sz+'px'; s.style.height=sz+'px';
+      s.style.color=['#FFD24A','#FFB347','#FF8A5C'][i%3];
+      s.innerHTML='<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="M12 2l2.6 6.3L21 9l-5 4.2L17.5 21 12 17.3 6.5 21 8 13.2 3 9l6.4-.7z"/></svg>';
+      avatarZone.appendChild(s);
+      setTimeout(()=>s.remove(),760);
+    }
   }
 
   function reset(){
@@ -656,6 +700,7 @@
     p.style.top=(52+Math.random()*10)+'%';
     floatLayer.appendChild(p);
     setTimeout(()=>p.remove(),1100);
+    return p;
   }
   /* 蛋黄水母：点击时飘出若干粉色背景爱心（铺满全屏、慢速上升、避用 emoji） */
   function floatHearts(n){
