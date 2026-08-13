@@ -493,29 +493,7 @@
     }
   }
   /* 落定彩带：停靠在卡片底缘（结算时卡片隐藏则停靠在屏幕底边），轻微回弹后停留再淡出 */
-  function spawnRestRibbons(n){
-    const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
-    const colors=[accent].concat(PALETTE);
-    const card=document.getElementById('card');
-    const r=card.getBoundingClientRect();
-    const hidden=(r.width===0);
-    const left0=hidden?8:r.left+10;
-    const span=hidden?(window.innerWidth-16):(r.width-20);
-    const topY=hidden?(window.innerHeight-30):(r.bottom-30);
-    for(let i=0;i<n;i++){
-      const s=document.createElement('div');
-      s.className='ribbon-rest';
-      const c=colors[Math.floor(Math.random()*colors.length)];
-      s.style.background=`linear-gradient(180deg,${c},${c})`;
-      s.style.left=(left0+Math.random()*span)+'px';
-      s.style.top=topY+'px';
-      s.style.setProperty('--rot',(Math.random()*48-24)+'deg');
-      s.style.width=(8+Math.random()*5)+'px';
-      s.style.height=(26+Math.random()*16)+'px';
-      document.body.appendChild(s);
-      setTimeout(()=>s.remove(),3900);
-    }
-  }
+  function spawnRestRibbons(n){/* 彩带已禁用，避免偶发大长条 */}
   const stage=document.querySelector('.stage');
   const modal=document.getElementById('modal');
   const modalText=document.getElementById('modalText');
@@ -547,7 +525,7 @@
       avatar.innerHTML=buildCarousel(c.images,c.name);
       setupCarousel();
     }
-    if(id!=='danhuangshuimu') setupImageHit(id);
+    if(id!=='danhuangshuimu') setupImageHit(id); else setupLoveHit();
     selectScreen.classList.remove('show');
     setTimeout(()=>mainScreen.classList.add('show'),40);
   }
@@ -603,6 +581,19 @@
           time+=hitDelta; if(time>total)total=time; setRing(time,total); bump();
           if(id!=='jiulingersi' && time>30 && !shown120 && Math.random()<0.18){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
         }
+        setTimeout(()=>img.classList.remove('img-hit'),520);
+      });
+    });
+  }
+  /* 蛋黄水母：点图片飘爱心 + 柔和音效（love 主题不攻击） */
+  function setupLoveHit(){
+    const imgs=avatar.querySelectorAll('img');
+    imgs.forEach(img=>{
+      img.style.cursor='pointer';
+      img.addEventListener('click',()=>{
+        SFX.play('good');
+        img.classList.remove('img-hit'); void img.offsetWidth; img.classList.add('img-hit');
+        floatHearts(8);
         setTimeout(()=>img.classList.remove('img-hit'),520);
       });
     });
@@ -883,18 +874,7 @@
     spawnOneRibbon(kongsuCount);
     spawnRestRibbons(5);
   }
-  function spawnOneRibbon(idx){
-    const pairs=[['#EE99BB','#F2A0C4'],['#8FC4E8','#9FD0EC'],['#F4B860','#F6C97A'],['#7FC8A9','#9AD9BD'],['#E0907A','#EFA68F'],['#9DBE5E','#B7D27E']];
-    const p=pairs[(typeof idx==='number'?idx:werCount)%pairs.length];
-    const r=document.createElement('span');
-    r.className='ribbon';
-    r.style.background=`linear-gradient(180deg,${p[0]},${p[1]})`;
-    r.style.left=(Math.random()*100)+'%';
-    r.style.width=(7+Math.random()*7)+'px';
-    r.style.height=(26+Math.random()*18)+'px';
-    r.style.animationDuration=(2.8+Math.random()*1.8)+'s';
-    confettiBox.appendChild(r);
-  }
+  function spawnOneRibbon(idx){/* 彩带已禁用，避免偶发大长条 */}
   /* 蚕豆豆：拉豆豆 —— 每点一次豆豆+N，飘字随机 + 彩带 + 丝带 */
   function douBark(o){
     douCount++;
