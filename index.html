@@ -408,7 +408,9 @@
     tiyuanbu:'#C7B36B', andelei:'#C39B6C', istp:'#8FA8E8',
     nainiumao:'#B3ADA4', pocky:'#4ECDC4', shiyue:'#8A837D',
     yueshenxing:'#9B8EC4',
-    jiulingersi:'#D4A574'
+    jiulingersi:'#D4A574',
+    meibao:'#C4A882',
+    s3471:'#9E8B7D'
   };
   const PALETTE=['#E0907A','#7FC8A9','#F4B860','#8FC4E8','#EE99BB','#9DBE5E'];
 
@@ -444,8 +446,14 @@
     pocky:{name:'Pocky',images:['Pocky.webp'],dialog:breakup()},
     shiyue:{name:'十月',images:['shiyue.webp'],
       dialog:{kind:'breakup',text:'郑函泽要和你绝交',start:20,yes:'哦',no:'哦',yesDelta:10,noDelta:10}},
-    yueshenxing:{name:'月神星',images:['yueshenxing.webp'],dialog:breakup()},
-    jiulingersi:{name:'玖零尔斯·菜市场自提',images:['jiulingersi.webp'],dialog:breakup()}
+    yueshenxing:{name:'月神星',images:['yueshenxing.webp'],dialog:breakup({start:35})},
+    jiulingersi:{name:'玖零尔斯·菜市场自提',images:['jiulingersi.webp'],
+      dialog:{kind:'work',text:'你想工作多久？',start:5000,
+        options:[{label:'不想工作',role:'primary'},{label:'想工作',role:'ghost'}]}},
+    meibao:{name:'美宝',images:['meibao.webp'],dialog:breakup()},
+    s3471:{name:'3471',images:['3471.webp'],
+      dialog:{kind:'xiehuang',text:'你今天蟹黄了吗？',
+        options:[{label:'蟹黄了',amount:1,role:'primary'},{label:'没有蟹黄',amount:3,role:'ghost'}]}}
   };
 
   const selectScreen=document.getElementById('selectScreen');
@@ -513,7 +521,7 @@
   const modalText=document.getElementById('modalText');
   const modalClose=document.getElementById('modalClose');
 
-  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0,shown120=false,werCount=0,douCount=0,kongsuCount=0,love=0,tickUpdate=null;
+  let current=null,time=20,total=20,timer=null,carouselTimer=null,idx=0,count=0,modalOpen=false,kickCount=0,shown120=false,werCount=0,douCount=0,kongsuCount=0,xiehuangCount=0,love=0,tickUpdate=null;
 
   function buildWall(){
     wall.innerHTML=Object.entries(characters).map(([id,c])=>`
@@ -571,12 +579,29 @@
         SFX.play('hit');
         img.classList.remove('img-hit'); void img.offsetWidth; img.classList.add('img-hit');
         spawnHitStars();
-        const p=floatText(id==='lurenju' ? randomOrangeText() : '被攻击！+120秒');
+        // 玖零尔斯：点图随机出现 工作时间 +/- 文案
+        let hitText, hitDelta;
+        if(id==='jiulingersi'){
+          const vals=[-100,100,-600,-888,888];
+          hitDelta=vals[Math.floor(Math.random()*vals.length)];
+          hitText='工作时间'+hitDelta;
+        }else if(id==='s3471'){
+          const v=Math.floor(Math.random()*5)+1; // 蟹黄+1 ~ 蟹黄+5 随机
+          hitText='蟹黄+'+v; hitDelta=0;
+        }else if(id==='lurenju'){
+          hitText=randomOrangeText(); hitDelta=0;
+        }else if(id==='candoudou'){
+          const dv=Math.floor(Math.random()*10)+1; // 被攻击 豆豆+1 ~ 豆豆+10 随机
+          hitText='被攻击 豆豆+'+dv; hitDelta=0;
+        }else{
+          hitText='被攻击！+120秒'; hitDelta=120;
+        }
+        const p=floatText(hitText);
         if(p)p.classList.add('hit-pop');
-        if(document.getElementById('ringNum')){
+        if(document.getElementById('ringNum') && hitDelta!==0){
           const before=time;
-          time+=120; if(time>total)total=time; setRing(time,total); bump();
-          if(time>=120 && before<120){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
+          time+=hitDelta; if(time>total)total=time; setRing(time,total); bump();
+          if(id!=='jiulingersi' && time>30 && !shown120 && Math.random()<0.18){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
         }
         setTimeout(()=>img.classList.remove('img-hit'),520);
       });
@@ -665,7 +690,7 @@
         const before=time;
         time+=d.yesDelta||10; if(time>total)total=time; setRing(time,total); bump();
         floatText('+'+(d.yesDelta||10)+'秒'); maybeBonus();
-        if(time>=120 && before<120){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
+        if(time>30 && !shown120 && Math.random()<0.18){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
       };
       document.getElementById('noBtn').onclick=()=>{
         SFX.play('bad');
@@ -734,6 +759,41 @@
         if(o.label==='不拉') openModal('我要和你绝交','好',null);
       });
       document.getElementById('pullBack').onclick=back;
+    }else if(d.kind==='xiehuang'){
+      xiehuangCount=0;
+      stage.classList.add('spaced');
+      cardInner.innerHTML=`
+        <div class="question">${d.text}</div>
+        <div class="btns" id="opt"></div>
+        <button class="btn ghost" id="xiehuangBack" style="width:100%;margin-top:14px;">返回</button>`;
+      fillOpts(d.options,o=>{
+        xiehuangBark(o);
+        if(o.label==='没有蟹黄') openModal('你居然没有蟹黄！','好吧',null);
+      });
+      document.getElementById('xiehuangBack').onclick=back;
+    }else if(d.kind==='work'){
+      time=d.start; total=d.start;
+      stage.classList.add('spaced');
+      cardInner.innerHTML=`
+        <div class="question">${d.text}</div>
+        ${ringHTML(time)}
+        <div class="btns" id="opt"></div>
+        <button class="btn ghost" id="workBack" style="width:100%;margin-top:14px;">返回</button>`;
+      fillOpts(d.options,o=>{
+        if(o.label==='不想工作'){
+          // 随缘出现：工作时间 -100 / -50 / -500 / -10
+          const vals=[-100,-50,-500,-10];
+          const v=vals[Math.floor(Math.random()*vals.length)];
+          SFX.play('bad');
+          time+=v; if(time>total)total=time; setRing(time,total); bump();
+          floatText('工作时间'+v);
+        }else if(o.label==='想工作'){
+          openModal('我没允许你工作','好',null);
+        }
+      });
+      document.getElementById('workBack').onclick=back;
+      tickUpdate=()=>setRing(time,total);
+      startTimer(()=>openModal('工作做完了','好',null));
     }else if(d.kind==='kongsu'){
       kongsuCount=0;
       stage.classList.add('spaced');
@@ -803,16 +863,16 @@
     floatText('Wer*120');
     werConfetti();
     spawnOneRibbon();
-    spawnRestRibbons(3);
+    spawnRestRibbons(5);
   }
   function werConfetti(count){
     const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
     const colors=[accent].concat(PALETTE);
     const c=(typeof count==='number'?count:werCount);
-    const base={particleCount:22+c*5,spread:82,startVelocity:42,origin:{y:0.62},colors,scalar:1.1,shapes:['ribbon','square'],ticks:190};
+    const base={particleCount:22+c*5,spread:82,startVelocity:42,origin:{y:0.62},colors,scalar:1.1,shapes:['square'],ticks:190};
     layeredBurst(base);
-    setTimeout(()=>layeredBurst({particleCount:14+c*3,angle:60,spread:50,origin:{x:0},colors,shapes:['ribbon','square']}),120);
-    setTimeout(()=>layeredBurst({particleCount:14+c*3,angle:120,spread:50,origin:{x:1},colors,shapes:['ribbon','square']}),120);
+    setTimeout(()=>layeredBurst({particleCount:14+c*3,angle:60,spread:50,origin:{x:0},colors,shapes:['square']}),120);
+    setTimeout(()=>layeredBurst({particleCount:14+c*3,angle:120,spread:50,origin:{x:1},colors,shapes:['square']}),120);
   }
   /* 芒种：控诉 —— 点同意就一直"继续控诉你"，werwer 同款漂浮+彩带，可反复点 */
   function kongsuBark(){
@@ -821,7 +881,7 @@
     floatText('继续控诉你');
     werConfetti(kongsuCount);
     spawnOneRibbon(kongsuCount);
-    spawnRestRibbons(3);
+    spawnRestRibbons(5);
   }
   function spawnOneRibbon(idx){
     const pairs=[['#EE99BB','#F2A0C4'],['#8FC4E8','#9FD0EC'],['#F4B860','#F6C97A'],['#7FC8A9','#9AD9BD'],['#E0907A','#EFA68F'],['#9DBE5E','#B7D27E']];
@@ -835,22 +895,41 @@
     r.style.animationDuration=(2.8+Math.random()*1.8)+'s';
     confettiBox.appendChild(r);
   }
-  /* 蚕豆豆：拉豆豆 —— 每点一次豆豆+N，飘字 + 彩带 + 丝带（比 werwer 稍轻一点） */
+  /* 蚕豆豆：拉豆豆 —— 每点一次豆豆+N，飘字随机 + 彩带 + 丝带 */
   function douBark(o){
     douCount++;
     SFX.play('good');
-    floatText('豆豆+'+o.amount);
-    douConfetti(o.amount);
+    // 随机飘字：+1 +2 +3 常见，+10 最低概率(约10%)
+    const val = Math.random()<0.10 ? 10 : [1,2,3][Math.floor(Math.random()*3)];
+    floatText('豆豆+'+val);
+    douConfetti(val);
     spawnOneRibbon(douCount);
-    spawnRestRibbons(3);
+    spawnRestRibbons(5);
+  }
+  /* 3471：蟹黄 —— 每点一次蟹黄+N，飘字 + 彩带 + 丝带 */
+  function xiehuangBark(o){
+    xiehuangCount++;
+    SFX.play('good');
+    floatText('蟹黄+'+o.amount);
+    xiehuangConfetti(o.amount);
+    spawnOneRibbon(xiehuangCount);
+    spawnRestRibbons(5);
+  }
+  function xiehuangConfetti(amount){
+    const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
+    const colors=[accent].concat(PALETTE);
+    const n=(amount===2?38:22);
+    layeredBurst({particleCount:n,spread:80,startVelocity:40,origin:{y:0.62},colors,scalar:1.1,shapes:['square'],ticks:190});
+    setTimeout(()=>layeredBurst({particleCount:Math.round(n*0.6),angle:60,spread:50,origin:{x:0},colors,shapes:['square']}),120);
+    setTimeout(()=>layeredBurst({particleCount:Math.round(n*0.6),angle:120,spread:50,origin:{x:1},colors,shapes:['square']}),120);
   }
   function douConfetti(amount){
     const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
     const colors=[accent].concat(PALETTE);
     const n=(amount===2?38:22);
-    layeredBurst({particleCount:n,spread:80,startVelocity:40,origin:{y:0.62},colors,scalar:1.1,shapes:['ribbon','square'],ticks:190});
-    setTimeout(()=>layeredBurst({particleCount:Math.round(n*0.6),angle:60,spread:50,origin:{x:0},colors,shapes:['ribbon','square']}),120);
-    setTimeout(()=>layeredBurst({particleCount:Math.round(n*0.6),angle:120,spread:50,origin:{x:1},colors,shapes:['ribbon','square']}),120);
+    layeredBurst({particleCount:n,spread:80,startVelocity:40,origin:{y:0.62},colors,scalar:1.1,shapes:['square'],ticks:190});
+    setTimeout(()=>layeredBurst({particleCount:Math.round(n*0.6),angle:60,spread:50,origin:{x:0},colors,shapes:['square']}),120);
+    setTimeout(()=>layeredBurst({particleCount:Math.round(n*0.6),angle:120,spread:50,origin:{x:1},colors,shapes:['square']}),120);
   }
   function startTimer(onTimeout){
     clearInterval(timer);
@@ -879,12 +958,12 @@
   function celebrate(){
     const accent=getComputedStyle(mainScreen).getPropertyValue('--accent').trim()||'#C9A06A';
     const colors=[accent].concat(PALETTE);
-    layeredBurst({particleCount:130,spread:85,startVelocity:46,origin:{y:0.7},colors,scalar:1.15,shapes:['ribbon','square','circle'],ticks:200});
-    setTimeout(()=>layeredBurst({particleCount:90,angle:60,spread:55,origin:{x:0},colors,shapes:['ribbon','square']}),180);
-    setTimeout(()=>layeredBurst({particleCount:90,angle:120,spread:55,origin:{x:1},colors,shapes:['ribbon','square']}),180);
+    layeredBurst({particleCount:130,spread:85,startVelocity:46,origin:{y:0.7},colors,scalar:1.15,shapes:['square','circle'],ticks:200});
+    setTimeout(()=>layeredBurst({particleCount:90,angle:60,spread:55,origin:{x:0},colors,shapes:['square']}),180);
+    setTimeout(()=>layeredBurst({particleCount:90,angle:120,spread:55,origin:{x:1},colors,shapes:['square']}),180);
     let n=0;
     const iv=setInterval(()=>{
-      layeredBurst({particleCount:34,spread:100,startVelocity:26,origin:{y:0},colors,scalar:0.9,shapes:['ribbon']});
+      layeredBurst({particleCount:34,spread:100,startVelocity:26,origin:{y:0},colors,scalar:0.9,shapes:['square']});
       if(++n>4)clearInterval(iv);
     },320);
     spawnRestRibbons(6);
