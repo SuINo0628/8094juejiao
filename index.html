@@ -286,9 +286,18 @@
     .friend-wall{grid-template-columns:repeat(3,1fr);gap:16px 14px;}
   }
   @media(min-height:760px){.stage{gap:22px;}}
+
+  /* 音效开关 */
+  .mute-btn{position:fixed;top:calc(env(safe-area-inset-top) + 14px);right:14px;width:44px;height:44px;border-radius:50%;
+    background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    color:var(--ink);box-shadow:var(--shadow-sm);cursor:pointer;z-index:50;transition:transform .15s ease;}
+  .mute-btn:active{transform:scale(.88);}
+  .mute-btn svg{width:20px;height:20px;}
 </style>
 </head>
 <body>
+
+<button class="mute-btn" id="muteBtn" aria-label="音效开关"></button>
 
 <section id="selectScreen" class="screen show">
   <div class="select-head">
@@ -333,6 +342,65 @@
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js" async></script>
 <script>
+  /* ===== 音效系统（Web Audio 合成，无需任何音频文件）===== */
+  const SFX={
+    ctx:null, enabled:true,
+    ensure(){
+      if(!this.ctx){
+        try{ const AC=window.AudioContext||window.webkitAudioContext; this.ctx=new AC(); }catch(e){ this.ctx=null; }
+      }
+      if(this.ctx && this.ctx.state==='suspended'){ this.ctx.resume(); }
+    },
+    tone(freq,start,dur,type,peak){
+      if(!this.ctx)return;
+      const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+      o.type=type||'sine'; o.frequency.value=freq;
+      o.connect(g); g.connect(this.ctx.destination);
+      const t0=this.ctx.currentTime+start;
+      g.gain.setValueAtTime(0.0001,t0);
+      g.gain.exponentialRampToValueAtTime(peak||0.18,t0+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+      o.start(t0); o.stop(t0+dur+0.03);
+    },
+    noise(start,dur,peak){
+      if(!this.ctx)return;
+      const n=Math.floor(this.ctx.sampleRate*dur);
+      const buf=this.ctx.createBuffer(1,n,this.ctx.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+      const src=this.ctx.createBufferSource(); src.buffer=buf;
+      const g=this.ctx.createGain(); g.gain.value=peak||0.12;
+      src.connect(g); g.connect(this.ctx.destination);
+      src.start(this.ctx.currentTime+start);
+    },
+    play(name){
+      this.ensure();
+      if(!this.enabled || !this.ctx)return;
+      switch(name){
+        case 'enter': this.tone(523,0,0.12,'triangle',0.16); this.tone(784,0.09,0.16,'triangle',0.16); break;
+        case 'tap':   this.tone(660,0,0.06,'sine',0.14); break;
+        case 'good':  this.tone(523,0,0.10,'sine',0.16); this.tone(659,0.07,0.10,'sine',0.16); this.tone(784,0.14,0.14,'sine',0.16); break;
+        case 'bad':   this.tone(392,0,0.12,'sine',0.16); this.tone(262,0.08,0.18,'sine',0.16); break;
+        case 'win':   this.tone(523,0,0.12,'triangle',0.18); this.tone(659,0.10,0.12,'triangle',0.18); this.tone(784,0.20,0.12,'triangle',0.18); this.tone(1047,0.30,0.22,'triangle',0.18); break;
+        case 'alert': this.tone(330,0,0.10,'square',0.12); this.tone(330,0.14,0.10,'square',0.12); break;
+        case 'hit':   this.tone(150,0,0.14,'square',0.20); this.noise(0,0.10,0.10); break;
+        case 'wer':   this.tone(440,0,0.08,'square',0.14); this.tone(660,0.06,0.08,'square',0.14); this.tone(880,0.12,0.10,'square',0.14); break;
+      }
+    }
+  };
+  const muteBtn=document.getElementById('muteBtn');
+  function updateMuteIcon(){
+    muteBtn.innerHTML = SFX.enabled
+     ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>'
+     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="22" y1="2" x2="2" y2="22"/></svg>';
+  }
+  updateMuteIcon();
+  muteBtn.addEventListener('click',()=>{
+    SFX.enabled=!SFX.enabled;
+    updateMuteIcon();
+    if(SFX.enabled){ SFX.play('tap'); }
+  });
+
   const COLORS={
     jichibaofan:'#E79A6B', mangzhong:'#9DBE5E', lurenju:'#F0A24E',
     isfp:'#B49BDC', danhuangshuimu:'#8FC4E8', enfp:'#EE99BB',
@@ -451,7 +519,7 @@
         <span class="friend-name">${c.name}</span>
       </button>`).join('');
     wall.querySelectorAll('.friend').forEach(el=>{
-      el.addEventListener('click',()=>enter(el.dataset.id));
+      el.addEventListener('click',()=>{ SFX.play('enter'); enter(el.dataset.id); });
     });
   }
 
@@ -498,6 +566,7 @@
     imgs.forEach(img=>{
       img.style.cursor='pointer';
       img.addEventListener('click',()=>{
+        SFX.play('hit');
         img.classList.remove('img-hit'); void img.offsetWidth; img.classList.add('img-hit');
         spawnHitStars();
         const p=floatText(id==='lurenju' ? randomOrangeText() : '被攻击！+120秒');
@@ -590,12 +659,14 @@
           <button class="btn ghost" id="noBtn">${d.no}</button>
         </div>`;
       document.getElementById('yesBtn').onclick=()=>{
+        SFX.play('good');
         const before=time;
         time+=d.yesDelta||10; if(time>total)total=time; setRing(time,total); bump();
         floatText('+'+(d.yesDelta||10)+'秒'); maybeBonus();
         if(time>=120 && before<120){ shown120=true; openModal('好啦好啦，别点了！','好',null); }
       };
       document.getElementById('noBtn').onclick=()=>{
+        SFX.play('bad');
         time-=d.noDelta||10; setRing(time,total); bump(); floatText('-'+(d.noDelta||10)+'秒');
         if(time<120)shown120=false;
         if(time<=0)reconcile();
@@ -612,6 +683,7 @@
           <button class="btn ghost" id="noBtn">${d.no}</button>
         </div>`;
       document.getElementById('yesBtn').onclick=()=>{
+        SFX.play('good');
         const add=d.yesDelta||10;
         time+=add; if(time>total)total=time; setRing(time,total); bump();
         floatText('+'+add+'秒');
@@ -684,7 +756,7 @@
     opts.forEach(o=>{
       const b=document.createElement('button');
       b.className='btn '+(o.role||'primary'); b.textContent=o.label;
-      b.onclick=()=>onPick(o);
+      b.onclick=()=>{ SFX.play('tap'); onPick(o); };
       box.appendChild(b);
     });
   }
@@ -725,6 +797,7 @@
   /* 安德烈：比格吵闹特性 —— 每点一次 wer/werwer，丝带就多爆一次，且可一直点 */
   function werBark(){
     werCount++;
+    SFX.play('wer');
     floatText('Wer*120');
     werConfetti();
     spawnOneRibbon();
@@ -742,6 +815,7 @@
   /* 芒种：控诉 —— 点同意就一直"继续控诉你"，werwer 同款漂浮+彩带，可反复点 */
   function kongsuBark(){
     kongsuCount++;
+    SFX.play('wer');
     floatText('继续控诉你');
     werConfetti(kongsuCount);
     spawnOneRibbon(kongsuCount);
@@ -762,6 +836,7 @@
   /* 蚕豆豆：拉豆豆 —— 每点一次豆豆+N，飘字 + 彩带 + 丝带（比 werwer 稍轻一点） */
   function douBark(o){
     douCount++;
+    SFX.play('good');
     floatText('豆豆+'+o.amount);
     douConfetti(o.amount);
     spawnOneRibbon(douCount);
@@ -788,6 +863,7 @@
 
   function showResult(text,sub){
     clearInterval(timer); timer=null;
+    SFX.play('win');
     card.style.display='none';
     resultText.textContent=text;
     if(sub===undefined||sub===''){resultSub.style.display='none';}
@@ -835,9 +911,11 @@
 
   function openModal(text,btnLabel,onConfirm){
     modalOpen=true; clearInterval(timer); timer=null;
+    SFX.play('alert');
     modalText.textContent=text;
     modalClose.textContent=btnLabel||'关闭';
     modalClose.onclick=()=>{
+      SFX.play('tap');
       modal.classList.remove('show'); modalOpen=false;
       if(onConfirm)onConfirm();
     };
@@ -853,7 +931,7 @@
     mainScreen.classList.remove('show');
     setTimeout(()=>{selectScreen.classList.add('show');avatar.innerHTML='';cardInner.innerHTML='';},200);
   }
-  backBtn.onclick=back; resultBack.onclick=back;
+  backBtn.onclick=()=>{ SFX.play('tap'); back(); }; resultBack.onclick=()=>{ SFX.play('tap'); back(); };
 
   buildWall();
   document.addEventListener('gesturestart',e=>e.preventDefault());
